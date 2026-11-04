@@ -1,19 +1,20 @@
-
-import { Navigate, Routes, Route } from 'react-router-dom'
+import { Navigate, Routes, Route, Outlet } from 'react-router-dom'
 import { useAuth } from './context/useAuth'
 
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
+import Analytics from './pages/Analytics'
+import Navbar from './Components/Navbar'
+import Budgets from './pages/Budgets'
 
-// Protect pages from unauthenticated users
-function ProtectedRoute({ children }) {
+function ProtectedRoute() {
   const { user, loading } = useAuth()
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-[#F5F7FC]">
         <p className="text-sm font-medium text-slate-500">
           Loading your account...
         </p>
@@ -21,7 +22,16 @@ function ProtectedRoute({ children }) {
     )
   }
 
-  return user ? children : <Navigate to="/login" replace />
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F5F7FC]">
+      <Navbar />
+      <Outlet />
+    </div>
+  )
 }
 
 export default function App() {
@@ -29,7 +39,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-[#F5F7FC]">
         <p className="text-sm font-medium text-slate-500">
           Loading Smart Expense Tracker...
         </p>
@@ -39,7 +49,6 @@ export default function App() {
 
   return (
     <Routes>
-      {/* Default route */}
       <Route
         path="/"
         element={
@@ -50,45 +59,24 @@ export default function App() {
         }
       />
 
-      {/* Public routes */}
       <Route
         path="/login"
-        element={
-          user ? <Navigate to="/dashboard" replace /> : <Login />
-        }
+        element={user ? <Navigate to="/dashboard" replace /> : <Login />}
       />
 
       <Route
         path="/signup"
-        element={
-          user ? <Navigate to="/dashboard" replace /> : <Signup />
-        }
+        element={user ? <Navigate to="/dashboard" replace /> : <Signup />}
       />
 
-      {/* Protected routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/transactions"
-        element={
-          <ProtectedRoute>
-            <Transactions />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Unknown routes */}
-      <Route
-        path="*"
-        element={<Navigate to="/" replace />}
-      />
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/transactions" element={<Transactions />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/budgets" element={<Budgets />} />
+      </Route>
+       
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
