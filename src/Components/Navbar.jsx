@@ -56,9 +56,9 @@ export default function Navbar() {
           className="flex items-center gap-3"
           onClick={() => setMobileOpen(false)}
         >
-          <div className="rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 p-2.5 text-white shadow-lg shadow-blue-600/20">
-            <Wallet size={22} />
-          </div>
+            <div className="rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 p-2.5 text-white shadow-lg shadow-blue-600/20">
+              <Wallet size={22} />
+            </div>
 
           <div>
             <p className="text-base font-extrabold tracking-tight text-slate-900">
