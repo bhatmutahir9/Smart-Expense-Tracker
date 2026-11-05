@@ -12,6 +12,7 @@ import {
   TrendingUp,
   CreditCard,
   ChartNoAxesCombined,
+  LoaderCircle,
 } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
 
@@ -22,6 +23,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -37,7 +39,7 @@ export default function Login() {
     try {
       const { error: loginError } = await login(
         email.trim(),
-        password,
+        password
       )
 
       if (loginError) {
@@ -54,20 +56,24 @@ export default function Login() {
   }
 
   return (
-    <main className="flex min-h-screen min-h-dvh items-center justify-center bg-[#F4F7FC] px-4 py-8 sm:px-6">
+    <main className="relative flex min-h-screen min-h-dvh items-center justify-center overflow-hidden bg-[#F4F7FC] px-4 py-8 sm:px-6">
 
-      <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xl shadow-slate-200/50 lg:min-h-[660px] lg:grid-cols-2">
+      {/* Background decoration */}
+      <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-blue-200/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl" />
 
-        {/* Left branding panel */}
-        <section className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-blue-700 via-blue-700 to-indigo-700 p-10 text-white lg:flex xl:p-14">
+      <div className="relative grid w-full max-w-6xl overflow-hidden rounded-[28px] border border-white bg-white shadow-2xl shadow-slate-300/40 lg:min-h-[680px] lg:grid-cols-2">
 
-          <div className="absolute -right-28 -top-28 h-80 w-80 rounded-full border border-white/10" />
-          <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full border border-white/10" />
-          <div className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-white/[0.06]" />
+        {/* LEFT BRANDING PANEL */}
+        <section className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[#102A72] via-[#1747AD] to-[#4338CA] p-10 text-white lg:flex xl:p-14">
+
+          <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full border border-white/10" />
+          <div className="absolute -right-12 -top-12 h-64 w-64 rounded-full border border-white/10" />
+          <div className="absolute -bottom-40 -left-32 h-96 w-96 rounded-full bg-white/[0.06]" />
 
           {/* Brand */}
           <div className="relative z-10 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/20 bg-white/15">
               <Wallet size={25} />
             </div>
 
@@ -75,66 +81,73 @@ export default function Login() {
               <h1 className="text-xl font-bold tracking-tight">
                 Smart Expense
               </h1>
-              <p className="text-xs text-blue-100">
+              <p className="text-xs text-blue-200">
                 Personal Finance Manager
               </p>
             </div>
           </div>
 
-          {/* Main message */}
+          {/* Main content */}
           <div className="relative z-10 my-12 max-w-md">
-            <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-blue-100">
-              Take control of your money
-            </p>
+
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-blue-100">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              YOUR FINANCES, SIMPLIFIED
+            </div>
 
             <h2 className="text-4xl font-bold leading-tight tracking-tight xl:text-5xl">
-              Make smarter
+              Take control of
               <br />
-              financial decisions.
+              your financial
+              <br />
+              <span className="text-blue-200">
+                future.
+              </span>
             </h2>
 
-            <p className="mt-6 max-w-sm text-base leading-7 text-blue-100">
-              Track your spending, manage your budgets and
-              understand your finances — all in one place.
+            <p className="mt-6 max-w-sm text-sm leading-7 text-blue-100 sm:text-base">
+              Track expenses, manage budgets and make
+              smarter financial decisions with one
+              powerful personal finance platform.
             </p>
 
             {/* Dashboard preview */}
-            <div className="mt-10 rounded-2xl border border-white/20 bg-white/10 p-5 shadow-lg backdrop-blur-sm">
+            <div className="mt-10 rounded-2xl border border-white/20 bg-white/10 p-5 shadow-xl backdrop-blur-md">
 
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-blue-100">
-                    Financial overview
+                  <p className="text-xs text-blue-200">
+                    Financial management
                   </p>
                   <p className="mt-1 text-lg font-bold">
-                    Your money, organized.
+                    Everything in one place
                   </p>
                 </div>
 
                 <div className="rounded-xl bg-white/15 p-3">
-                  <ChartNoAxesCombined size={23} />
+                  <ChartNoAxesCombined size={24} />
                 </div>
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
 
                 <div className="rounded-xl border border-white/10 bg-white/10 p-4">
-                  <div className="flex items-center gap-2 text-blue-100">
-                    <TrendingUp size={15} />
-                    <span className="text-xs">Track income</span>
-                  </div>
+                  <TrendingUp size={19} className="text-emerald-300" />
                   <p className="mt-3 text-sm font-semibold">
-                    Stay informed
+                    Track income
+                  </p>
+                  <p className="mt-1 text-xs text-blue-200">
+                    Monitor your earnings
                   </p>
                 </div>
 
                 <div className="rounded-xl border border-white/10 bg-white/10 p-4">
-                  <div className="flex items-center gap-2 text-blue-100">
-                    <CreditCard size={15} />
-                    <span className="text-xs">Manage expenses</span>
-                  </div>
+                  <CreditCard size={19} className="text-blue-200" />
                   <p className="mt-3 text-sm font-semibold">
-                    Spend wisely
+                    Manage expenses
+                  </p>
+                  <p className="mt-1 text-xs text-blue-200">
+                    Control your spending
                   </p>
                 </div>
 
@@ -143,27 +156,27 @@ export default function Login() {
           </div>
 
           {/* Footer */}
-          <div className="relative z-10 flex items-center gap-2 text-xs text-blue-100">
+          <div className="relative z-10 flex items-center gap-2 text-xs text-blue-200">
             <ShieldCheck size={16} />
-            <span>Your personal finance companion</span>
+            Your personal finance companion
           </div>
         </section>
 
-        {/* Login form */}
+        {/* RIGHT LOGIN PANEL */}
         <section className="flex items-center justify-center px-5 py-10 sm:px-10 lg:px-12 xl:px-16">
 
           <div className="w-full max-w-md">
 
             {/* Mobile branding */}
             <div className="mb-10 flex items-center gap-3 lg:hidden">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/20">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20">
                 <Wallet size={23} />
               </div>
 
               <div>
-                <p className="text-lg font-bold text-slate-900">
+                <h1 className="text-lg font-bold text-slate-900">
                   Smart Expense
-                </p>
+                </h1>
                 <p className="text-xs text-slate-500">
                   Personal Finance Manager
                 </p>
@@ -172,12 +185,12 @@ export default function Login() {
 
             {/* Heading */}
             <div className="mb-8">
-              <div className="mb-5 inline-flex rounded-xl bg-blue-50 p-3 text-blue-600">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                 <Lock size={23} />
               </div>
 
-              <p className="mb-2 text-sm font-semibold text-blue-600">
-                Welcome back
+              <p className="mb-2 text-sm font-semibold tracking-wide text-blue-600">
+                WELCOME BACK
               </p>
 
               <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
@@ -185,11 +198,12 @@ export default function Login() {
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-slate-500">
-                Enter your account details to continue to your dashboard.
+                Enter your account details to continue
+                to your financial dashboard.
               </p>
             </div>
 
-            {/* Form */}
+            {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
 
               {/* Email */}
@@ -219,12 +233,21 @@ export default function Login() {
 
               {/* Password */}
               <div>
-                <label
-                  htmlFor="password"
-                  className="mb-2 block text-sm font-semibold text-slate-700"
-                >
-                  Password
-                </label>
+                <div className="mb-2 flex items-center justify-between">
+                  <label
+                    htmlFor="password"
+                    className="text-sm font-semibold text-slate-700"
+                  >
+                    Password
+                  </label>
+
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs font-semibold text-blue-600 transition hover:text-indigo-700"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
 
                 <div className="flex min-h-[52px] items-center rounded-xl border border-slate-200 bg-slate-50 px-4 transition focus-within:border-blue-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/10">
                   <Lock size={18} className="shrink-0 text-slate-400" />
@@ -246,18 +269,31 @@ export default function Login() {
                     className="rounded-lg p-1 text-slate-400 transition hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword
-                      ? <EyeOff size={18} />
-                      : <Eye size={18} />}
+                    {showPassword ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
                   </button>
                 </div>
               </div>
+
+              {/* Remember Me */}
+              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 accent-blue-600"
+                />
+                Remember me
+              </label>
 
               {/* Error */}
               {error && (
                 <div
                   role="alert"
-                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-5 text-red-600"
                 >
                   {error}
                 </div>
@@ -267,34 +303,45 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                className="group flex min-h-[53px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition duration-200 hover:-translate-y-0.5 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? 'Signing in...' : 'Sign in'}
-
-                {!loading && (
-                  <ArrowRight
-                    size={18}
-                    className="transition-transform group-hover:translate-x-1"
-                  />
+                {loading ? (
+                  <>
+                    <LoaderCircle size={18} className="animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    Sign in to dashboard
+                    <ArrowRight
+                      size={18}
+                      className="transition-transform group-hover:translate-x-1"
+                    />
+                  </>
                 )}
               </button>
             </form>
 
-            {/* Signup link */}
+            {/* Signup */}
             <div className="mt-8 border-t border-slate-100 pt-6 text-center">
               <p className="text-sm text-slate-500">
                 Don't have an account?{' '}
                 <Link
                   to="/signup"
-                  className="font-semibold text-blue-600 transition hover:text-indigo-700"
+                  className="font-bold text-blue-600 transition hover:text-indigo-700"
                 >
                   Create account
                 </Link>
               </p>
             </div>
 
-            {/* Footer */}
-            <p className="mt-8 text-center text-xs text-slate-400">
+            {/* Security */}
+            <div className="mt-7 flex items-center justify-center gap-2 text-xs text-slate-400">
+              <ShieldCheck size={15} />
+              Secure authentication powered by Supabase
+            </div>
+
+            <p className="mt-5 text-center text-xs text-slate-400">
               © {new Date().getFullYear()} Smart Expense Tracker
             </p>
 

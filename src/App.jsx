@@ -8,6 +8,7 @@ import Transactions from './pages/Transactions'
 import Analytics from './pages/Analytics'
 import Navbar from './Components/Navbar'
 import Budgets from './pages/Budgets'
+import SavingsGoals from './pages/SavingsGoals'
 
 function ProtectedRoute() {
   const { user, loading } = useAuth()
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/budgets" element={<Budgets />} />
+        <Route path="/savings-goals" element={<SavingsGoals />} />
       </Route>
        
       <Route path="*" element={<Navigate to="/" replace />} />

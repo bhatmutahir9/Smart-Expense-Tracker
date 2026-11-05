@@ -17,6 +17,7 @@ const navItems = [
   { name: 'Transactions', path: '/transactions', icon: ReceiptText },
   { name: 'Analytics', path: '/analytics', icon: BarChart3 },
   { name: 'Budgets', path: '/budgets', icon: Target },
+  { name: 'Savings Goals',path: '/savings-goals',icon: Target,}
 ]
 
 export default function Navbar() {

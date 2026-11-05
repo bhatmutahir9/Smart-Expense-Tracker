@@ -32,29 +32,35 @@ export default function Signup() {
   if (user) return <Navigate to="/dashboard" replace />
 
   const passwordChecks = [
-    {
-      label: 'At least 6 characters',
-      valid: password.length >= 6,
-    },
-    {
-      label: 'Contains a number',
-      valid: /\d/.test(password),
-    },
-    {
-      label: 'Contains an uppercase letter',
-      valid: /[A-Z]/.test(password),
-    },
+    { label: 'At least 6 characters', valid: password.length >= 6 },
+    { label: 'Contains a number', valid: /\d/.test(password) },
+    { label: 'Contains an uppercase letter', valid: /[A-Z]/.test(password) },
   ]
 
   const strength = passwordChecks.filter((item) => item.valid).length
+  const passwordsMatch =
+    confirmPassword.length > 0 && password === confirmPassword
+
+  const fieldClass =
+    'flex min-h-[52px] items-center rounded-xl border border-slate-200 bg-white px-4 transition-all duration-200 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10'
+
+  const inputClass =
+    'min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400'
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     setMessage('')
 
-    if (password.length < 6) {
-      setError('Password must contain at least 6 characters.')
+    const cleanEmail = email.trim()
+
+    if (!cleanEmail) {
+      setError('Please enter your email address.')
+      return
+    }
+
+    if (strength !== 3) {
+      setError('Please fulfill all password requirements.')
       return
     }
 
@@ -67,12 +73,18 @@ export default function Signup() {
 
     try {
       const { data, error: signupError } = await signup(
-        email.trim(),
+        cleanEmail,
         password,
       )
 
       if (signupError) {
-        setError(signupError.message)
+        const errorMessage = signupError.message || ''
+
+        if (errorMessage.toLowerCase().includes('already registered')) {
+          setError('This email is already registered. Please sign in.')
+        } else {
+          setError(errorMessage || 'Unable to create your account.')
+        }
         return
       }
 
@@ -90,28 +102,17 @@ export default function Signup() {
     }
   }
 
-  const fieldClass =
-    'flex min-h-[52px] items-center rounded-xl border border-slate-200 bg-white px-4 transition-all duration-200 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10'
-
-  const inputClass =
-    'min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400'
-
-  if (user) return <Navigate to="/dashboard" replace />
-
   return (
     <main className="flex min-h-screen min-h-dvh items-center justify-center bg-[#F4F7FC] px-4 py-8 sm:px-6">
-
       <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_-25px_rgba(15,23,42,0.18)] lg:min-h-[700px] lg:grid-cols-[0.95fr_1.05fr]">
 
         {/* Branding panel */}
         <section className="relative hidden flex-col justify-between overflow-hidden bg-[#1E40AF] p-10 text-white lg:flex xl:p-12">
-
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-600/40 via-transparent to-indigo-950/50" />
 
           <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full border border-white/10" />
           <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full border border-white/10" />
 
-          {/* Brand */}
           <div className="relative z-10 flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-blue-700">
               <Wallet size={23} />
@@ -127,7 +128,6 @@ export default function Signup() {
             </div>
           </div>
 
-          {/* Main message */}
           <div className="relative z-10 my-12">
             <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-blue-200">
               Better financial habits start here
@@ -144,9 +144,7 @@ export default function Signup() {
               and make smarter decisions about your money.
             </p>
 
-            {/* Dashboard preview */}
             <div className="mt-10 max-w-sm rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
-
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-blue-200">
@@ -181,7 +179,6 @@ export default function Signup() {
             </div>
           </div>
 
-          {/* Bottom */}
           <div className="relative z-10 flex items-center gap-2 text-xs text-blue-200">
             <ShieldCheck size={16} />
             <span>Designed for smarter money management</span>
@@ -190,7 +187,6 @@ export default function Signup() {
 
         {/* Signup form */}
         <section className="flex items-center justify-center px-5 py-10 sm:px-10 lg:px-12 xl:px-16">
-
           <div className="w-full max-w-md">
 
             {/* Mobile brand */}
@@ -232,10 +228,7 @@ export default function Signup() {
 
               {/* Email */}
               <div>
-                <label
-                  htmlFor="signup-email"
-                  className="mb-2 block text-sm font-semibold text-slate-700"
-                >
+                <label htmlFor="signup-email" className="mb-2 block text-sm font-semibold text-slate-700">
                   Email address
                 </label>
 
@@ -261,10 +254,7 @@ export default function Signup() {
 
               {/* Password */}
               <div>
-                <label
-                  htmlFor="signup-password"
-                  className="mb-2 block text-sm font-semibold text-slate-700"
-                >
+                <label htmlFor="signup-password" className="mb-2 block text-sm font-semibold text-slate-700">
                   Password
                 </label>
 
@@ -283,7 +273,6 @@ export default function Signup() {
                     placeholder="Create a password"
                     autoComplete="new-password"
                     required
-                    minLength={6}
                     className={inputClass}
                   />
 
@@ -297,7 +286,6 @@ export default function Signup() {
                   </button>
                 </div>
 
-                {/* Password strength */}
                 {password.length > 0 && (
                   <div className="mt-3">
                     <div className="mb-2 flex gap-1.5">
@@ -323,7 +311,7 @@ export default function Signup() {
                             item.valid ? 'text-emerald-600' : 'text-slate-400'
                           }`}
                         >
-                          <Check size={13} />
+                          {item.valid ? <Check size={13} /> : <X size={13} />}
                           {item.label}
                         </div>
                       ))}
@@ -334,10 +322,7 @@ export default function Signup() {
 
               {/* Confirm password */}
               <div>
-                <label
-                  htmlFor="confirm-password"
-                  className="mb-2 block text-sm font-semibold text-slate-700"
-                >
+                <label htmlFor="confirm-password" className="mb-2 block text-sm font-semibold text-slate-700">
                   Confirm password
                 </label>
 
@@ -361,61 +346,34 @@ export default function Signup() {
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setShowConfirmPassword((value) => !value)
-                    }
+                    onClick={() => setShowConfirmPassword((value) => !value)}
                     className="rounded-md p-1 text-slate-400 transition hover:text-blue-600"
-                    aria-label={
-                      showConfirmPassword ? 'Hide password' : 'Show password'
-                    }
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showConfirmPassword ? (
-                      <EyeOff size={18} />
-                    ) : (
-                      <Eye size={18} />
-                    )}
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
 
                 {confirmPassword.length > 0 && (
-                  <p
-                    className={`mt-2 flex items-center gap-1.5 text-xs ${
-                      password === confirmPassword
-                        ? 'text-emerald-600'
-                        : 'text-red-500'
-                    }`}
-                  >
-                    {password === confirmPassword ? (
-                      <>
-                        <Check size={13} />
-                        Passwords match
-                      </>
-                    ) : (
-                      <>
-                        <X size={13} />
-                        Passwords do not match
-                      </>
-                    )}
+                  <p className={`mt-2 flex items-center gap-1.5 text-xs ${
+                    passwordsMatch ? 'text-emerald-600' : 'text-red-500'
+                  }`}>
+                    {passwordsMatch ? <Check size={13} /> : <X size={13} />}
+                    {passwordsMatch ? 'Passwords match' : 'Passwords do not match'}
                   </p>
                 )}
               </div>
 
               {/* Error */}
               {error && (
-                <div
-                  role="alert"
-                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-600"
-                >
+                <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-600">
                   {error}
                 </div>
               )}
 
               {/* Success */}
               {message && (
-                <div
-                  role="status"
-                  className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-700"
-                >
+                <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-700">
                   {message}
                 </div>
               )}
@@ -423,16 +381,13 @@ export default function Signup() {
               {/* Submit */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || strength !== 3 || !passwordsMatch}
                 className="group flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition duration-200 hover:bg-blue-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Creating account...' : 'Create account'}
 
                 {!loading && (
-                  <ArrowRight
-                    size={18}
-                    className="transition-transform duration-200 group-hover:translate-x-1"
-                  />
+                  <ArrowRight size={18} className="transition-transform duration-200 group-hover:translate-x-1" />
                 )}
               </button>
             </form>
@@ -441,10 +396,7 @@ export default function Signup() {
             <div className="mt-8 border-t border-slate-100 pt-6 text-center">
               <p className="text-sm text-slate-500">
                 Already have an account?{' '}
-                <Link
-                  to="/login"
-                  className="font-semibold text-blue-600 transition hover:text-blue-700"
-                >
+                <Link to="/login" className="font-semibold text-blue-600 transition hover:text-blue-700">
                   Sign in
                 </Link>
               </p>
@@ -453,11 +405,8 @@ export default function Signup() {
             {/* Footer */}
             <div className="mt-8 flex items-center justify-center gap-2 text-xs text-slate-400">
               <ShieldCheck size={14} />
-              <span>
-                © {new Date().getFullYear()} Smart Expense Tracker
-              </span>
+              <span>© {new Date().getFullYear()} Smart Expense Tracker</span>
             </div>
-
           </div>
         </section>
       </div>
