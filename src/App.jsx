@@ -1,3 +1,4 @@
+
 import { Navigate, Routes, Route, Outlet } from 'react-router-dom'
 import { useAuth } from './context/useAuth'
 
@@ -6,9 +7,11 @@ import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
 import Analytics from './pages/Analytics'
-import Navbar from './Components/Navbar'
 import Budgets from './pages/Budgets'
 import SavingsGoals from './pages/SavingsGoals'
+import RecurringTransactions from './pages/RecurringTransactions'
+
+import Navbar from './Components/Navbar'
 
 function ProtectedRoute() {
   const { user, loading } = useAuth()
@@ -76,8 +79,14 @@ export default function App() {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/budgets" element={<Budgets />} />
         <Route path="/savings-goals" element={<SavingsGoals />} />
+
+        {/* Recurring Transactions */}
+        <Route
+          path="/recurring-transactions"
+          element={<RecurringTransactions />}
+        />
       </Route>
-       
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

@@ -19,19 +19,20 @@ import {
   PiggyBank,
   Target,
   AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  Clock3,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/useAuth'
 
-// Currency formatter
 const currency = (amount) =>
   new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 0,
   }).format(Number(amount) || 0)
 
-// Date formatter
 const formatDate = (date) => {
   if (!date) return 'Date unavailable'
 
@@ -46,29 +47,6 @@ const formatDate = (date) => {
   })
 }
 
-// Themes for summary cards
-const themes = {
-  blue: {
-    icon: 'bg-blue-100 text-blue-700',
-    accent: 'from-blue-600 to-indigo-600',
-    border: 'hover:border-blue-200',
-    dot: 'bg-blue-500',
-  },
-  green: {
-    icon: 'bg-emerald-100 text-emerald-700',
-    accent: 'from-emerald-500 to-teal-500',
-    border: 'hover:border-emerald-200',
-    dot: 'bg-emerald-500',
-  },
-  rose: {
-    icon: 'bg-rose-100 text-rose-700',
-    accent: 'from-rose-500 to-pink-500',
-    border: 'hover:border-rose-200',
-    dot: 'bg-rose-500',
-  },
-}
-
-// Safely parse transaction dates
 const getTransactionDate = (value) => {
   if (!value) return null
 
@@ -81,6 +59,37 @@ const getTransactionDate = (value) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
+const quickActions = [
+  {
+    title: 'Transactions',
+    description: 'Manage your money',
+    icon: ReceiptText,
+    path: '/transactions',
+    color: 'bg-blue-50 text-blue-600',
+  },
+  {
+    title: 'Budgets',
+    description: 'Control your spending',
+    icon: Target,
+    path: '/budgets',
+    color: 'bg-violet-50 text-violet-600',
+  },
+  {
+    title: 'Analytics',
+    description: 'Understand your habits',
+    icon: BarChart3,
+    path: '/analytics',
+    color: 'bg-emerald-50 text-emerald-600',
+  },
+  {
+    title: 'Savings Goals',
+    description: 'Build your future',
+    icon: PiggyBank,
+    path: '/savings-goals',
+    color: 'bg-amber-50 text-amber-600',
+  },
+]
+
 export default function Dashboard() {
   const { user } = useAuth()
 
@@ -89,56 +98,37 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
 
-  // Load dashboard transactions
-  async function loadDashboard(isRefresh = false) {
-    if (!user?.id) {
-      setTransactions([])
-      setLoading(false)
-      setRefreshing(false)
-      return
-    }
+  const firstName =
+    user?.user_metadata?.full_name?.split(' ')[0] ||
+    user?.email?.split('@')[0] ||
+    'there'
 
-    if (isRefresh) {
-      setRefreshing(true)
-    } else {
-      setLoading(true)
-    }
+  const today = new Date()
 
-    setError('')
+  const monthName = today.toLocaleDateString('en-IN', {
+    month: 'long',
+    year: 'numeric',
+  })
 
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('transaction_date', { ascending: false })
+  const fullDate = today.toLocaleDateString('en-IN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
 
-      if (fetchError) {
-        setError(fetchError.message)
-      } else {
-        setTransactions(data ?? [])
-      }
-    } catch {
-      setError('Unable to load transactions. Please try again.')
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }
-
-  // Initial fetch and user change handling
+  // Fetch dashboard data
   useEffect(() => {
     let active = true
 
     async function fetchDashboard() {
       if (!user?.id) {
-        setTransactions([])
-        setLoading(false)
+        if (active) {
+          setTransactions([])
+          setLoading(false)
+        }
         return
       }
-
-      setLoading(true)
-      setError('')
 
       try {
         const { data, error: fetchError } = await supabase
@@ -152,7 +142,8 @@ export default function Dashboard() {
         if (fetchError) {
           setError(fetchError.message)
         } else {
-          setTransactions(data ?? [])
+          setTransactions(data || [])
+          setError('')
         }
       } catch {
         if (active) {
@@ -172,20 +163,42 @@ export default function Dashboard() {
     }
   }, [user?.id])
 
-  // Overall financial calculations
+  // Manual refresh
+  async function handleRefresh() {
+    if (!user?.id || refreshing) return
+
+    setRefreshing(true)
+    setError('')
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('transaction_date', { ascending: false })
+
+      if (fetchError) throw fetchError
+
+      setTransactions(data || [])
+    } catch (err) {
+      setError(err.message || 'Unable to refresh dashboard.')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  // Overall totals
   const income = transactions
     .filter((item) => item.type === 'income')
-    .reduce((total, item) => total + Number(item.amount || 0), 0)
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0)
 
   const expenses = transactions
     .filter((item) => item.type === 'expense')
-    .reduce((total, item) => total + Number(item.amount || 0), 0)
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0)
 
   const balance = income - expenses
 
-  // Current and previous month boundaries
-  const today = new Date()
-
+  // Month boundaries
   const currentMonthStart = new Date(
     today.getFullYear(),
     today.getMonth(),
@@ -204,29 +217,21 @@ export default function Dashboard() {
     1,
   )
 
-  // Current month transactions
+  // Current month records
   const currentMonthTransactions = transactions.filter((item) => {
     const date = getTransactionDate(item.transaction_date)
 
-    return (
-      date &&
-      date >= currentMonthStart &&
-      date < nextMonthStart
-    )
+    return date && date >= currentMonthStart && date < nextMonthStart
   })
 
-  // Previous month transactions
+  // Previous month records
   const previousMonthTransactions = transactions.filter((item) => {
     const date = getTransactionDate(item.transaction_date)
 
-    return (
-      date &&
-      date >= previousMonthStart &&
-      date < currentMonthStart
-    )
+    return date && date >= previousMonthStart && date < currentMonthStart
   })
 
-  // Monthly income and expenses
+  // Monthly totals
   const monthlyIncome = currentMonthTransactions
     .filter((item) => item.type === 'income')
     .reduce((sum, item) => sum + Number(item.amount || 0), 0)
@@ -246,7 +251,7 @@ export default function Dashboard() {
           previousMonthExpenses) * 100
       : null
 
-  // Category-wise spending
+  // Category analysis
   const categorySpending = currentMonthTransactions
     .filter((item) => item.type === 'expense')
     .reduce((result, item) => {
@@ -261,7 +266,7 @@ export default function Dashboard() {
   const topCategory = Object.entries(categorySpending)
     .sort((a, b) => b[1] - a[1])[0]
 
-  // Savings rate
+  // Savings
   const savings = monthlyIncome - monthlyExpenses
 
   const savingsRate =
@@ -277,128 +282,60 @@ export default function Dashboard() {
   ).getDate()
 
   const forecastExpenses =
-    (monthlyExpenses / today.getDate()) * daysInMonth
+    today.getDate() > 0
+      ? (monthlyExpenses / today.getDate()) * daysInMonth
+      : monthlyExpenses
 
-  // Spending alert
   const spendingAlert =
     spendingChange !== null && spendingChange > 20
 
-  const monthName = today.toLocaleDateString('en-IN', {
-    month: 'long',
-    year: 'numeric',
-  })
-
-  // Summary cards
-  const summaryCards = [
-    {
-      title: 'Total Balance',
-      amount: balance,
-      description: 'Your net financial position',
-      icon: Wallet,
-      theme: 'blue',
-    },
-    {
-      title: 'Total Income',
-      amount: income,
-      description: 'All recorded earnings',
-      icon: TrendingUp,
-      theme: 'green',
-    },
-    {
-      title: 'Total Expenses',
-      amount: expenses,
-      description: 'All recorded spending',
-      icon: TrendingDown,
-      theme: 'rose',
-    },
-  ]
-
   const recentTransactions = transactions.slice(0, 6)
-  const firstName = user?.email?.split('@')[0] || 'there'
+
+  const greeting =
+    today.getHours() < 12
+      ? 'Good morning'
+      : today.getHours() < 17
+        ? 'Good afternoon'
+        : 'Good evening'
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#F4F7FC]">
+    <main className="min-h-screen bg-[#F7F8FC] text-slate-900">
 
-      <style>{`
-        @keyframes dashboardEnter {
-          from {
-            opacity: 0;
-            transform: translateY(18px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+      <div className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 lg:px-10 lg:py-9">
 
-        @keyframes dashboardFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-7px); }
-        }
-
-        .dashboard-enter {
-          animation: dashboardEnter .65s ease-out both;
-        }
-
-        .dashboard-delay-1 { animation-delay: .08s; }
-        .dashboard-delay-2 { animation-delay: .16s; }
-        .dashboard-delay-3 { animation-delay: .24s; }
-        .dashboard-delay-4 { animation-delay: .32s; }
-
-        .dashboard-float {
-          animation: dashboardFloat 5s ease-in-out infinite;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .dashboard-enter,
-          .dashboard-float {
-            animation: none !important;
-          }
-
-          .dashboard-enter {
-            opacity: 1;
-            transform: none;
-          }
-
-          * {
-            scroll-behavior: auto !important;
-          }
-        }
-      `}</style>
-
-      <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
-
-        {/* Welcome section */}
-        <section className="dashboard-enter mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        {/* Header */}
+        <section className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
 
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-bold tracking-wide text-blue-700">
-              <Sparkles size={14} />
-              YOUR FINANCIAL OVERVIEW
+            <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-600">
+              <span className="h-2 w-2 rounded-full bg-blue-600" />
+              Personal Finance Overview
             </div>
 
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-              Welcome back,{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                {firstName}
-              </span>
-              !
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl">
+              {greeting},{' '}
+              <span className="text-blue-600">{firstName}</span>
             </h1>
 
             <p className="mt-2 text-sm text-slate-500 sm:text-base">
-              Here's what's happening with your money.
+              Here's your financial overview for today.
             </p>
+
+            <div className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-400">
+              <CalendarDays size={14} />
+              {fullDate}
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={() => loadDashboard(true)}
+              onClick={handleRefresh}
               disabled={loading || refreshing}
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-blue-200 hover:text-blue-600 disabled:opacity-50"
             >
               <RefreshCw
-                size={17}
+                size={16}
                 className={refreshing ? 'animate-spin' : ''}
               />
               Refresh
@@ -406,14 +343,10 @@ export default function Dashboard() {
 
             <Link
               to="/transactions"
-              className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-600/30"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/30"
             >
-              <Plus size={19} />
+              <Plus size={18} />
               Add Transaction
-              <ArrowUpRight
-                size={16}
-                className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1"
-              />
             </Link>
           </div>
         </section>
@@ -422,337 +355,429 @@ export default function Dashboard() {
         {error && (
           <div
             role="alert"
-            className="dashboard-enter mb-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"
+            className="mb-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"
           >
-            <ShieldCheck size={19} className="mt-0.5 shrink-0" />
+            <AlertTriangle size={19} className="mt-0.5 shrink-0" />
             <div>
-              <p className="font-bold">Something went wrong</p>
+              <p className="font-bold">Unable to load your data</p>
               <p className="mt-1">{error}</p>
             </div>
           </div>
         )}
 
-        {/* Loading skeleton */}
+        {/* Loading */}
         {loading ? (
-          <section className="grid gap-5 md:grid-cols-3">
+          <div className="grid gap-5 lg:grid-cols-3">
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
-                className="animate-pulse rounded-2xl border border-slate-200 bg-white p-6"
-              >
-                <div className="flex justify-between">
-                  <div className="h-4 w-28 rounded bg-slate-200" />
-                  <div className="h-11 w-11 rounded-xl bg-slate-200" />
-                </div>
-                <div className="mt-7 h-9 w-40 rounded-lg bg-slate-200" />
-                <div className="mt-4 h-3 w-32 rounded bg-slate-100" />
-              </div>
+                className="h-48 animate-pulse rounded-2xl bg-white shadow-sm"
+              />
             ))}
-          </section>
+          </div>
         ) : (
           <>
 
-            {/* Financial summary */}
-            <section className="grid gap-5 md:grid-cols-3">
-              {summaryCards.map((card, index) => {
-                const Icon = card.icon
-                const theme = themes[card.theme]
+            {/* Main financial overview */}
+            <section className="grid gap-5 lg:grid-cols-3">
 
-                return (
-                  <div
-                    key={card.title}
-                    className={`dashboard-enter dashboard-delay-${index + 1} group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-slate-200/70 ${theme.border}`}
-                  >
-                    <div className={`absolute left-0 top-0 h-1 w-full bg-gradient-to-r ${theme.accent}`} />
+              {/* Balance card */}
+              <div className="relative min-h-[235px] overflow-hidden rounded-3xl bg-gradient-to-br from-[#142B55] via-[#17468B] to-[#2563EB] p-6 text-white shadow-xl shadow-blue-950/10 sm:p-8 lg:col-span-1">
 
-                    <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-slate-50 transition-transform duration-500 group-hover:scale-150" />
+                <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full border border-white/10" />
+                <div className="pointer-events-none absolute -right-4 -top-8 h-40 w-40 rounded-full border border-white/10" />
+                <div className="pointer-events-none absolute -bottom-24 -left-12 h-48 w-48 rounded-full bg-white/[0.04]" />
 
-                    <div className="relative flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-500">
-                          {card.title}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-400">
-                          {card.description}
-                        </p>
-                      </div>
-
-                      <div className={`rounded-xl p-3 transition duration-300 group-hover:rotate-6 group-hover:scale-110 ${theme.icon}`}>
-                        <Icon size={23} />
-                      </div>
-                    </div>
-
-                    <div className="relative mt-7">
-                      <p className="break-all text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
-                        {currency(card.amount)}
-                      </p>
-
-                      <div className="mt-4 flex items-center gap-2">
-                        <span className={`h-2 w-2 rounded-full ${theme.dot}`} />
-                        <span className="text-xs font-medium text-slate-400">
-                          {card.title === 'Total Balance'
-                            ? 'Income minus expenses'
-                            : card.title === 'Total Income'
-                              ? 'Recorded income'
-                              : 'Recorded expenses'}
-                        </span>
-                      </div>
-                    </div>
+                <div className="relative flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-medium text-blue-100">
+                    <Wallet size={18} />
+                    Total Balance
                   </div>
-                )
-              })}
+
+                  <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-bold tracking-wider text-blue-100">
+                    OVERALL
+                  </span>
+                </div>
+
+                <div className="relative mt-9">
+                  <p className="text-xs font-medium text-blue-100/80">
+                    Your net financial position
+                  </p>
+
+                  <h2 className="mt-2 break-all text-3xl font-extrabold tracking-tight sm:text-4xl">
+                    {currency(balance)}
+                  </h2>
+                </div>
+
+                <div className="relative mt-8 flex items-center justify-between border-t border-white/15 pt-5">
+                  <div>
+                    <p className="text-[11px] text-blue-100/70">
+                      Total transactions
+                    </p>
+                    <p className="mt-1 text-lg font-bold">
+                      {transactions.length}
+                    </p>
+                  </div>
+
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white/10">
+                    <CircleDollarSign size={23} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Income */}
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:p-7">
+                <div className="flex items-center justify-between">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                    <TrendingUp size={23} />
+                  </div>
+
+                  <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                    Income
+                  </span>
+                </div>
+
+                <p className="mt-7 text-sm font-semibold text-slate-500">
+                  Total Income
+                </p>
+
+                <h2 className="mt-2 break-all text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                  {currency(income)}
+                </h2>
+
+                <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+                  <span className="text-xs text-slate-400">
+                    All recorded earnings
+                  </span>
+                  <ArrowUpRight size={18} className="text-emerald-500" />
+                </div>
+              </div>
+
+              {/* Expenses */}
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:p-7">
+                <div className="flex items-center justify-between">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                    <TrendingDown size={23} />
+                  </div>
+
+                  <span className="rounded-full bg-rose-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-rose-700">
+                    Expenses
+                  </span>
+                </div>
+
+                <p className="mt-7 text-sm font-semibold text-slate-500">
+                  Total Expenses
+                </p>
+
+                <h2 className="mt-2 break-all text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                  {currency(expenses)}
+                </h2>
+
+                <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+                  <span className="text-xs text-slate-400">
+                    All recorded spending
+                  </span>
+                  <ArrowDownRight size={18} className="text-rose-500" />
+                </div>
+              </div>
             </section>
 
-            {/* Smart Spending Insights */}
-            <section className="dashboard-enter mt-8">
+            {/* Monthly overview */}
+            <section className="mt-8">
 
-              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <div className="rounded-xl bg-indigo-50 p-2.5 text-indigo-600">
-                      <Lightbulb size={21} />
-                    </div>
-
-                    <h2 className="text-xl font-extrabold text-slate-900">
-                      Smart Spending Insights
-                    </h2>
-                  </div>
-
-                  <p className="mt-2 text-sm text-slate-500">
+                  <h2 className="text-xl font-extrabold tracking-tight text-slate-900">
+                    Monthly Overview
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
                     Your financial activity for {monthName}
                   </p>
                 </div>
 
-                <span className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700">
-                  <Sparkles size={13} className="mr-1 inline" />
-                  AUTO ANALYSIS
-                </span>
+                <Link
+                  to="/analytics"
+                  className="inline-flex items-center gap-1 text-sm font-bold text-blue-600 transition hover:text-blue-800"
+                >
+                  View analytics
+                  <ArrowRight size={16} />
+                </Link>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
 
-                {/* Top spending category */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-slate-500">
-                      Top Spending Category
-                    </p>
-                    <Target size={20} className="text-blue-600" />
-                  </div>
+                {/* Monthly income */}
+                <InsightCard
+                  icon={TrendingUp}
+                  label="Monthly Income"
+                  value={currency(monthlyIncome)}
+                  detail="Income received this month"
+                  color="emerald"
+                />
 
-                  <h3 className="mt-5 truncate text-xl font-extrabold text-slate-900">
-                    {topCategory ? topCategory[0] : 'No data yet'}
-                  </h3>
-
-                  <p className="mt-2 text-sm text-slate-500">
-                    {topCategory
-                      ? `${currency(topCategory[1])} spent this month`
-                      : 'Add expenses to discover your top category.'}
-                  </p>
-                </div>
+                {/* Monthly expenses */}
+                <InsightCard
+                  icon={TrendingDown}
+                  label="Monthly Expenses"
+                  value={currency(monthlyExpenses)}
+                  detail="Expenses recorded this month"
+                  color="rose"
+                />
 
                 {/* Savings rate */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-slate-500">
-                      Savings Rate
-                    </p>
-                    <PiggyBank size={20} className="text-emerald-600" />
-                  </div>
-
-                  <h3 className={`mt-5 text-2xl font-extrabold ${
+                <InsightCard
+                  icon={PiggyBank}
+                  label="Savings Rate"
+                  value={
                     savingsRate === null
-                      ? 'text-slate-400'
-                      : savingsRate >= 0
-                        ? 'text-emerald-600'
-                        : 'text-rose-600'
-                  }`}>
-                    {savingsRate === null
                       ? 'N/A'
-                      : `${savingsRate.toFixed(1)}%`}
-                  </h3>
+                      : `${savingsRate.toFixed(1)}%`
+                  }
+                  detail={
+                    savingsRate === null
+                      ? 'Record income to calculate savings'
+                      : `${currency(savings)} net savings this month`
+                  }
+                  color="blue"
+                />
 
-                  <p className="mt-2 text-sm text-slate-500">
-                    {savingsRate === null
-                      ? 'Record income to calculate savings.'
-                      : `${currency(savings)} net savings this month`}
-                  </p>
-                </div>
-
-                {/* Spending comparison */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-slate-500">
-                      Spending Comparison
-                    </p>
-
-                    {spendingAlert
-                      ? <AlertTriangle size={20} className="text-rose-500" />
-                      : <TrendingUp size={20} className="text-blue-600" />}
-                  </div>
-
-                  <h3 className={`mt-5 text-2xl font-extrabold ${
-                    spendingChange === null
-                      ? 'text-slate-400'
-                      : spendingChange > 0
-                        ? 'text-rose-600'
-                        : 'text-emerald-600'
-                  }`}>
-                    {spendingChange === null
-                      ? 'N/A'
-                      : `${spendingChange > 0 ? '+' : ''}${spendingChange.toFixed(1)}%`}
-                  </h3>
-
-                  <p className="mt-2 text-sm text-slate-500">
-                    {spendingChange === null
-                      ? 'Previous month data unavailable.'
-                      : spendingChange > 0
-                        ? 'More spending than last month.'
-                        : spendingChange < 0
-                          ? 'Less spending than last month.'
-                          : 'Spending is unchanged.'}
-                  </p>
-                </div>
-
-                {/* Monthly forecast */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-slate-500">
-                      Monthly Forecast
-                    </p>
-                    <CalendarDays size={20} className="text-indigo-600" />
-                  </div>
-
-                  <h3 className="mt-5 break-all text-xl font-extrabold text-slate-900">
-                    {currency(forecastExpenses)}
-                  </h3>
-
-                  <p className="mt-2 text-sm text-slate-500">
-                    Estimated expenses by month end.
-                  </p>
-                </div>
-
+                {/* Forecast */}
+                <InsightCard
+                  icon={CalendarDays}
+                  label="Monthly Forecast"
+                  value={currency(forecastExpenses)}
+                  detail="Estimated expenses by month end"
+                  color="violet"
+                />
               </div>
-
-              {/* Smart alert */}
-              {spendingAlert ? (
-                <div className="mt-5 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4">
-                  <div className="rounded-lg bg-rose-100 p-2 text-rose-600">
-                    <AlertTriangle size={20} />
-                  </div>
-
-                  <div>
-                    <h3 className="font-bold text-rose-800">
-                      Spending increased significantly!
-                    </h3>
-
-                    <p className="mt-1 text-sm leading-6 text-rose-700">
-                      Your expenses are {spendingChange.toFixed(1)}% higher
-                      than the previous month. Review your spending categories
-                      to identify where you can save.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-5 flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4">
-                  <div className="rounded-lg bg-blue-100 p-2 text-blue-600">
-                    <Lightbulb size={20} />
-                  </div>
-
-                  <div>
-                    <h3 className="font-bold text-blue-900">
-                      Keep tracking your finances
-                    </h3>
-
-                    <p className="mt-1 text-sm leading-6 text-blue-700">
-                      {topCategory
-                        ? `${topCategory[0]} is currently your highest spending category. Keep monitoring it to maintain better financial habits.`
-                        : 'Add your transactions to unlock personalized spending insights.'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
             </section>
 
-            {/* Main dashboard grid */}
-            <section className="mt-8 grid items-start gap-6 lg:grid-cols-3">
+            {/* Insights */}
+            <section className="mt-8 grid gap-5 lg:grid-cols-2">
 
-              {/* Recent transactions */}
-              <div className="dashboard-enter dashboard-delay-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:col-span-2">
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-7">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                    <Sparkles size={21} />
+                  </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:px-6">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
-                        <ReceiptText size={19} />
-                      </div>
-
-                      <h2 className="text-lg font-bold text-slate-900">
-                        Recent Transactions
-                      </h2>
-                    </div>
-
-                    <p className="mt-2 text-xs text-slate-400">
-                      Your latest financial activity
+                    <h2 className="font-extrabold text-slate-900">
+                      Spending Insights
+                    </h2>
+                    <p className="text-xs text-slate-400">
+                      Based on this month's transactions
                     </p>
                   </div>
+                </div>
+
+                <div className="mt-7 grid gap-6 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400">
+                      Top Spending Category
+                    </p>
+                    <h3 className="mt-2 truncate text-xl font-extrabold text-slate-900">
+                      {topCategory ? topCategory[0] : 'No data yet'}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {topCategory
+                        ? `${currency(topCategory[1])} spent`
+                        : 'Add expenses to see your top category.'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400">
+                      Compared to Last Month
+                    </p>
+                    <h3 className={`mt-2 text-2xl font-extrabold ${
+                      spendingChange === null
+                        ? 'text-slate-400'
+                        : spendingChange > 0
+                          ? 'text-rose-600'
+                          : 'text-emerald-600'
+                    }`}>
+                      {spendingChange === null
+                        ? 'N/A'
+                        : `${spendingChange > 0 ? '+' : ''}${spendingChange.toFixed(1)}%`}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {spendingChange === null
+                        ? 'Previous month data unavailable'
+                        : spendingChange > 0
+                          ? 'Spending has increased'
+                          : spendingChange < 0
+                            ? 'Spending has decreased'
+                            : 'Spending is unchanged'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`mt-7 flex items-start gap-3 rounded-2xl p-4 ${
+                  spendingAlert
+                    ? 'bg-rose-50'
+                    : 'bg-blue-50'
+                }`}>
+                  <div className={`mt-0.5 ${
+                    spendingAlert ? 'text-rose-600' : 'text-blue-600'
+                  }`}>
+                    {spendingAlert
+                      ? <AlertTriangle size={19} />
+                      : <Lightbulb size={19} />}
+                  </div>
+
+                  <div>
+                    <p className={`text-sm font-bold ${
+                      spendingAlert ? 'text-rose-800' : 'text-blue-900'
+                    }`}>
+                      {spendingAlert
+                        ? 'Your spending needs attention'
+                        : 'Keep building healthy money habits'}
+                    </p>
+
+                    <p className={`mt-1 text-xs leading-5 ${
+                      spendingAlert ? 'text-rose-700' : 'text-blue-700'
+                    }`}>
+                      {spendingAlert
+                        ? `Your expenses are ${spendingChange.toFixed(1)}% higher than last month. Review your spending to find opportunities to save.`
+                        : topCategory
+                          ? `${topCategory[0]} is your highest spending category this month. Keep an eye on it.`
+                          : 'Start recording transactions to receive useful insights about your finances.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick actions */}
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-7">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="font-extrabold text-slate-900">
+                      Quick Access
+                    </h2>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Everything you need in one place
+                    </p>
+                  </div>
+
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
+                    <Wallet size={19} />
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  {quickActions.map((action) => {
+                    const Icon = action.icon
+
+                    return (
+                      <Link
+                        key={action.path}
+                        to={action.path}
+                        className="group rounded-2xl border border-slate-100 p-4 transition duration-200 hover:border-blue-100 hover:bg-blue-50/40"
+                      >
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${action.color}`}>
+                          <Icon size={19} />
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between gap-1">
+                          <p className="text-sm font-bold text-slate-800">
+                            {action.title}
+                          </p>
+                          <ChevronRight
+                            size={15}
+                            className="shrink-0 text-slate-300 transition group-hover:translate-x-1 group-hover:text-blue-600"
+                          />
+                        </div>
+
+                        <p className="mt-1 text-[11px] leading-4 text-slate-400">
+                          {action.description}
+                        </p>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            </section>
+
+            {/* Recent transactions */}
+            <section className="mt-8 overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-5 py-6 sm:px-7">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <ReceiptText size={19} />
+                    </div>
+
+                    <h2 className="text-lg font-extrabold text-slate-900">
+                      Recent Transactions
+                    </h2>
+                  </div>
+
+                  <p className="mt-2 text-xs text-slate-400">
+                    A quick look at your latest activity
+                  </p>
+                </div>
+
+                <Link
+                  to="/transactions"
+                  className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  View all
+                  <ChevronRight size={15} />
+                </Link>
+              </div>
+
+              {recentTransactions.length === 0 ? (
+                <div className="px-5 py-16 text-center">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                    <ReceiptText size={27} />
+                  </div>
+
+                  <h3 className="mt-5 text-lg font-bold text-slate-900">
+                    No transactions yet
+                  </h3>
+
+                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+                    Your recent financial activity will appear here. Add your
+                    first transaction to get started.
+                  </p>
 
                   <Link
                     to="/transactions"
-                    className="group inline-flex items-center gap-1 text-sm font-bold text-blue-600 transition hover:text-indigo-700"
+                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700"
                   >
-                    View all
-                    <ChevronRight
-                      size={17}
-                      className="transition-transform group-hover:translate-x-1"
-                    />
+                    <Plus size={17} />
+                    Add Transaction
                   </Link>
                 </div>
-
-                {recentTransactions.length === 0 ? (
-                  <div className="px-5 py-16 text-center sm:px-8">
-                    <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                      <ReceiptText size={29} />
-                    </div>
-
-                    <h3 className="text-lg font-bold text-slate-800">
-                      No transactions yet
-                    </h3>
-
-                    <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">
-                      Your financial activity will appear here once you add
-                      your first transaction.
-                    </p>
-
-                    <Link
-                      to="/transactions"
-                      className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition hover:-translate-y-1 hover:bg-blue-700"
-                    >
-                      <Plus size={17} />
-                      Add your first transaction
-                    </Link>
+              ) : (
+                <>
+                  <div className="hidden grid-cols-[minmax(0,2fr)_1fr_1fr_1fr] gap-4 bg-slate-50/80 px-7 py-3 text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400 sm:grid">
+                    <span>Transaction</span>
+                    <span>Category</span>
+                    <span>Date</span>
+                    <span className="text-right">Amount</span>
                   </div>
-                ) : (
+
                   <div className="divide-y divide-slate-100">
-                    {recentTransactions.map((item, index) => {
+                    {recentTransactions.map((item) => {
                       const isIncome = item.type === 'income'
 
                       return (
                         <div
                           key={item.id}
-                          style={{ animationDelay: `${index * 70}ms` }}
-                          className="dashboard-enter group flex items-center justify-between gap-3 px-5 py-4 transition duration-200 hover:bg-slate-50/90 sm:px-6"
+                          className="grid gap-3 px-5 py-4 transition hover:bg-slate-50/70 sm:grid-cols-[minmax(0,2fr)_1fr_1fr_1fr] sm:items-center sm:gap-4 sm:px-7"
                         >
-                          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition duration-300 group-hover:scale-110 ${
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                               isIncome
-                                ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'
-                                : 'bg-rose-50 text-rose-600 group-hover:bg-rose-100'
+                                ? 'bg-emerald-50 text-emerald-600'
+                                : 'bg-rose-50 text-rose-600'
                             }`}>
                               {isIncome
-                                ? <ArrowDownRight size={22} />
-                                : <ArrowUpRight size={22} />}
+                                ? <ArrowDownRight size={20} />
+                                : <ArrowUpRight size={20} />}
                             </div>
 
                             <div className="min-w-0">
@@ -760,131 +785,106 @@ export default function Dashboard() {
                                 {item.title || 'Untitled transaction'}
                               </p>
 
-                              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                                <span className="truncate">
-                                  {item.category || 'Uncategorized'}
-                                </span>
-                                <span>·</span>
-                                <span>
-                                  {formatDate(item.transaction_date)}
-                                </span>
-                              </div>
+                              <p className="mt-1 text-xs text-slate-400 sm:hidden">
+                                {item.category || 'Uncategorized'} · {formatDate(item.transaction_date)}
+                              </p>
                             </div>
                           </div>
 
-                          <div className="shrink-0 text-right">
-                            <p className={`text-sm font-extrabold ${
-                              isIncome ? 'text-emerald-600' : 'text-rose-600'
-                            }`}>
-                              {isIncome ? '+' : '-'}{currency(item.amount)}
-                            </p>
+                          <div className="hidden sm:block">
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                              {item.category || 'Uncategorized'}
+                            </span>
+                          </div>
 
-                            <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          <div className="hidden items-center gap-1.5 text-xs text-slate-500 sm:flex">
+                            <Clock3 size={13} />
+                            {formatDate(item.transaction_date)}
+                          </div>
+
+                          <div className="flex items-center justify-between sm:justify-end">
+                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold sm:hidden ${
                               isIncome
                                 ? 'bg-emerald-50 text-emerald-700'
                                 : 'bg-rose-50 text-rose-700'
                             }`}>
                               {isIncome ? 'INCOME' : 'EXPENSE'}
                             </span>
+
+                            <p className={`text-sm font-extrabold ${
+                              isIncome ? 'text-emerald-600' : 'text-slate-900'
+                            }`}>
+                              {isIncome ? '+' : '-'}{currency(item.amount)}
+                            </p>
                           </div>
                         </div>
                       )
                     })}
                   </div>
-                )}
+                </>
+              )}
 
-                <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
-                  <p className="text-xs font-medium text-slate-500">
-                    Showing {recentTransactions.length} of {transactions.length} transactions
-                  </p>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/60 px-5 py-4 sm:px-7">
+                <p className="text-xs font-medium text-slate-400">
+                  Showing {recentTransactions.length} of {transactions.length} records
+                </p>
 
-                  <Link
-                    to="/transactions"
-                    className="text-xs font-bold text-blue-600 hover:text-indigo-700"
-                  >
-                    Manage records →
-                  </Link>
-                </div>
+                <Link
+                  to="/transactions"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800"
+                >
+                  Manage transactions
+                  <ArrowRight size={14} />
+                </Link>
               </div>
-
-              {/* Financial summary panel */}
-              <aside className="dashboard-enter dashboard-delay-4 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#101B35] via-[#172B50] to-[#1D4ED8] p-6 text-white shadow-xl shadow-blue-950/15">
-
-                <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full border border-white/10" />
-                <div className="pointer-events-none absolute -bottom-24 -left-16 h-64 w-64 rounded-full border border-white/10" />
-
-                <div className="relative">
-                  <div className="flex items-center justify-between">
-                    <div className="rounded-xl border border-white/10 bg-white/10 p-3 backdrop-blur-sm">
-                      <CircleDollarSign size={25} />
-                    </div>
-
-                    <div className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-[10px] font-bold tracking-wide text-emerald-200">
-                      FINANCIAL SUMMARY
-                    </div>
-                  </div>
-
-                  <h2 className="mt-7 text-2xl font-extrabold leading-tight">
-                    Stay in control of your money.
-                  </h2>
-
-                  <p className="mt-3 text-sm leading-6 text-blue-100/80">
-                    Keep your records updated and review your financial
-                    activity regularly to make smarter decisions.
-                  </p>
-
-                  <Link
-                    to="/transactions"
-                    className="group mt-7 flex w-full items-center justify-between rounded-xl bg-white px-4 py-3.5 text-sm font-bold text-blue-800 shadow-lg transition duration-300 hover:-translate-y-1 hover:bg-blue-50"
-                  >
-                    Manage transactions
-                    <ArrowUpRight
-                      size={19}
-                      className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1"
-                    />
-                  </Link>
-
-                  <div className="mt-8 border-t border-white/15 pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-medium text-blue-100/70">
-                          Total recorded transactions
-                        </p>
-
-                        <p className="mt-2 text-4xl font-extrabold tracking-tight">
-                          {transactions.length}
-                        </p>
-                      </div>
-
-                      <div className="dashboard-float rounded-2xl border border-white/10 bg-white/10 p-4">
-                        <ReceiptText size={29} className="text-blue-100" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-7 flex items-center gap-2 text-xs text-blue-100/70">
-                    <ShieldCheck size={15} />
-                    Your personal finance overview
-                  </div>
-                </div>
-              </aside>
             </section>
 
             {/* Footer */}
-            <footer className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-slate-200/80 py-6 text-xs text-slate-400 sm:flex-row">
+            <footer className="mt-9 flex flex-col items-center justify-between gap-3 border-t border-slate-200 pt-6 text-xs text-slate-400 sm:flex-row">
               <p>
                 © {new Date().getFullYear()} Smart Expense. All rights reserved.
               </p>
 
               <div className="flex items-center gap-2">
-                <CalendarDays size={14} />
-                <span>Manage your finances with confidence.</span>
+                <ShieldCheck size={14} />
+                <span>Your finances, organized with confidence.</span>
               </div>
             </footer>
-
           </>
         )}
       </div>
     </main>
+  )
+}
+
+// Reusable insight card
+function InsightCard({ icon: Icon, label, value, detail, color }) {
+  const colors = {
+    emerald: 'bg-emerald-50 text-emerald-600',
+    rose: 'bg-rose-50 text-rose-600',
+    blue: 'bg-blue-50 text-blue-600',
+    violet: 'bg-violet-50 text-violet-600',
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-slate-500">
+          {label}
+        </p>
+
+        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${colors[color]}`}>
+          <Icon size={18} />
+        </div>
+      </div>
+
+      <h3 className="mt-5 break-all text-xl font-extrabold tracking-tight text-slate-900">
+        {value}
+      </h3>
+
+      <p className="mt-2 text-xs leading-5 text-slate-400">
+        {detail}
+      </p>
+    </div>
   )
 }
