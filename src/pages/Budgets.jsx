@@ -372,12 +372,12 @@ export default function Budgets() {
         {/* Heading */}
         <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <div>
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-blue-600">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#3973B9]">
               <Target size={17} />
               Budget planning
             </div>
 
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+            <h1 className="text-2xl font-extrabold tracking-tight text-[#102A43] sm:text-3xl">
               Manage Your Budgets
             </h1>
 
@@ -394,14 +394,14 @@ export default function Budgets() {
                 const value = event.target.value
                 if (value) setSelectedMonth(`${value}-01`)
               }}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#3973B9] focus:ring-4 focus:ring-[#D8E6F4]"
               aria-label="Select budget month"
             />
 
             <button
               type="button"
               onClick={openAddForm}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#102A43] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#102A43]/20 transition hover:bg-[#173D60]"
             >
               <Plus size={18} />
               Add Budget
@@ -431,8 +431,8 @@ export default function Budgets() {
               title: 'Total Budget',
               value: budgetStats.totalBudget,
               icon: Wallet,
-              color: 'text-blue-600',
-              bg: 'bg-blue-50',
+              color: 'text-[#3973B9]',
+              bg: 'bg-[#EDF4FB]',
             },
             {
               title: 'Total Spent',
@@ -458,8 +458,8 @@ export default function Budgets() {
               title: 'Budget Usage',
               value: `${budgetStats.percentage.toFixed(1)}%`,
               icon: Target,
-              color: 'text-violet-600',
-              bg: 'bg-violet-50',
+              color: 'text-[#3973B9]',
+              bg: 'bg-[#EDF4FB]',
               isPercentage: true,
             },
           ].map((card) => {
@@ -484,7 +484,7 @@ export default function Budgets() {
                   {card.title}
                 </p>
 
-                <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
+                <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-[#102A43]">
                   {loading
                     ? '...'
                     : card.isPercentage
@@ -500,7 +500,7 @@ export default function Budgets() {
         <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">
+              <h2 className="text-lg font-bold text-[#102A43]">
                 Monthly Budget Progress
               </h2>
 
@@ -535,7 +535,7 @@ export default function Budgets() {
                   ? 'bg-rose-500'
                   : budgetStats.percentage >= 80
                     ? 'bg-amber-500'
-                    : 'bg-blue-600'
+                    : 'bg-[#3973B9]'
               }`}
               style={{
                 width: `${Math.min(budgetStats.percentage, 100)}%`,
@@ -553,7 +553,7 @@ export default function Budgets() {
         <section>
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-extrabold text-slate-900">
+              <h2 className="text-xl font-extrabold text-[#102A43]">
                 Category Budgets
               </h2>
 
@@ -566,7 +566,7 @@ export default function Budgets() {
               type="button"
               onClick={() => loadBudgets(true)}
               disabled={refreshing || loading}
-              className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-600 transition hover:border-[#D8E6F4] hover:bg-[#F3F7FB] hover:text-[#3973B9] disabled:opacity-50"
               aria-label="Refresh budgets"
             >
               <RefreshCw
@@ -587,11 +587,11 @@ export default function Budgets() {
             </div>
           ) : budgets.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-14 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EDF4FB] text-[#3973B9]">
                 <Target size={27} />
               </div>
 
-              <h3 className="mt-4 text-lg font-bold text-slate-900">
+              <h3 className="mt-4 text-lg font-bold text-[#102A43]">
                 No budgets for this month
               </h3>
 
@@ -602,7 +602,7 @@ export default function Budgets() {
               <button
                 type="button"
                 onClick={openAddForm}
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#102A43] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#173D60]"
               >
                 <Plus size={17} />
                 Create first budget
@@ -632,12 +632,12 @@ export default function Budgets() {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
+                        <div className="rounded-xl bg-[#EDF4FB] p-3 text-[#3973B9]">
                           <Icon size={21} />
                         </div>
 
                         <div>
-                          <h3 className="font-bold text-slate-900">
+                          <h3 className="font-bold text-[#102A43]">
                             {budget.category}
                           </h3>
 
@@ -651,7 +651,7 @@ export default function Budgets() {
                         <button
                           type="button"
                           onClick={() => openEditForm(budget)}
-                          className="rounded-lg p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
+                          className="rounded-lg p-2 text-slate-400 transition hover:bg-[#EDF4FB] hover:text-[#3973B9]"
                           aria-label={`Edit ${budget.category} budget`}
                         >
                           <Pencil size={16} />
@@ -679,7 +679,7 @@ export default function Budgets() {
                           Amount spent
                         </p>
 
-                        <p className="mt-1 text-xl font-extrabold text-slate-900">
+                        <p className="mt-1 text-xl font-extrabold text-[#102A43]">
                           {currency(spent)}
                         </p>
                       </div>
@@ -702,7 +702,7 @@ export default function Budgets() {
                             ? 'bg-rose-500'
                             : warning
                               ? 'bg-amber-500'
-                              : 'bg-blue-500'
+                              : 'bg-[#3973B9]'
                         }`}
                         style={{
                           width: `${Math.min(percentage, 100)}%`,
@@ -717,7 +717,7 @@ export default function Budgets() {
                             ? 'text-rose-600'
                             : warning
                               ? 'text-amber-600'
-                              : 'text-blue-600'
+                              : 'text-[#3973B9]'
                         }`}
                       >
                         {percentage.toFixed(1)}% used
@@ -773,7 +773,7 @@ export default function Budgets() {
           <div className="my-auto w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl sm:p-7">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-extrabold text-slate-900">
+                <h2 className="text-xl font-extrabold text-[#102A43]">
                   {editingId ? 'Edit Budget' : 'Create Budget'}
                 </h2>
 
@@ -811,7 +811,7 @@ export default function Budgets() {
                     }))
                   }
                   required
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#3973B9] focus:ring-4 focus:ring-[#D8E6F4]"
                 >
                   {categories.map((category) => {
                     const alreadyUsed = budgets.some(
@@ -855,20 +855,20 @@ export default function Budgets() {
                   }
                   placeholder="e.g. 5000"
                   required
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#3973B9] focus:ring-4 focus:ring-[#D8E6F4]"
                 />
               </div>
 
-              <div className="rounded-xl bg-blue-50 p-4">
-                <p className="text-xs font-semibold text-blue-700">
+              <div className="rounded-xl border border-[#D8E6F4] bg-[#EDF4FB] p-4">
+                <p className="text-xs font-semibold text-[#3973B9]">
                   Budget period
                 </p>
 
-                <p className="mt-1 font-bold text-blue-900">
+                <p className="mt-1 font-bold text-[#102A43]">
                   {getMonthLabel(selectedMonth)}
                 </p>
 
-                <p className="mt-1 text-xs text-blue-600">
+                <p className="mt-1 text-xs text-[#3973B9]">
                   This budget applies only to the selected month.
                 </p>
               </div>
@@ -876,7 +876,7 @@ export default function Budgets() {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102A43] px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#102A43]/20 transition hover:bg-[#173D60] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? (
                   <>

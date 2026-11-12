@@ -73,7 +73,7 @@ const quickActions = [
     subtitle: 'Manage your activity',
     icon: ReceiptText,
     path: '/transactions',
-    color: 'text-blue-600 bg-blue-50',
+    color: 'text-[#3973B9] bg-[#EDF4FB]',
   },
   {
     title: 'Budgets',
@@ -99,12 +99,11 @@ const quickActions = [
 ]
 
 const categoryColors = [
-  'bg-blue-500',
+  'bg-[#3973B9]',
   'bg-violet-500',
   'bg-emerald-500',
   'bg-amber-500',
   'bg-rose-500',
-  'bg-cyan-500',
 ]
 
 export default function Dashboard() {
@@ -153,6 +152,8 @@ export default function Dashboard() {
         setLoading(false)
         return
       }
+
+      setLoading(true)
 
       try {
         const { data, error: fetchError } = await supabase
@@ -276,30 +277,23 @@ export default function Dashboard() {
       return result
     }, {})
 
-  const categoryData = Object.entries(categorySpending)
+  const allCategoryData = Object.entries(categorySpending)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
 
+  const categoryData = allCategoryData.slice(0, 5)
   const topCategory = categoryData[0]
 
-  const totalCategorySpending = categoryData.reduce(
+  const totalCategorySpending = allCategoryData.reduce(
     (sum, item) => sum + item[1],
     0,
   )
 
   // Six-month financial trends
-  // Calculated directly to avoid unnecessary useMemo dependencies.
   const trendData = Array.from({ length: 6 }, (_, index) => {
-    const date = new Date(
-      currentYear,
-      currentMonth - 5 + index,
-      1,
-    )
+    const date = new Date(currentYear, currentMonth - 5 + index, 1)
 
     const records = transactions.filter((item) => {
-      const transactionDate = getTransactionDate(
-        item.transaction_date,
-      )
+      const transactionDate = getTransactionDate(item.transaction_date)
 
       return (
         transactionDate &&
@@ -328,33 +322,29 @@ export default function Dashboard() {
   const recentTransactions = transactions.slice(0, 6)
 
   return (
-    <main className="min-h-screen bg-[#F5F7FB] text-slate-900">
-      <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+    <main className="min-h-screen bg-[#F5F8FC] text-[#102A43]">
+      <div className="mx-auto max-w-[1500px] space-y-7 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
 
-        {/* Premium heading */}
+        {/* Dashboard heading */}
         <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div className="min-w-0 w-full">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-700">
+          <div className="min-w-0">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-[#DCE8F4] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-[#3973B9]">
               <LayoutDashboard size={13} />
-              Financial command center
+              Financial overview
             </div>
 
-            <h1 className="text-3xl font-extrabold tracking-[-0.04em] text-slate-950 sm:text-4xl lg:text-[42px]">
+            <h1 className="text-3xl font-extrabold tracking-[-0.045em] text-[#102A43] sm:text-4xl lg:text-[42px]">
               {greeting},{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
-                {firstName}
-              </span>
+              <span className="text-[#3973B9]">{firstName}</span>
             </h1>
 
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-              A clearer picture of your money, your spending, and your
-              financial progress.
+              A clear view of your money, spending habits, and financial progress.
             </p>
 
-            {/* Date left, Refresh right — same line on every screen */}
-            <div className="mt-3 flex w-full items-center justify-between gap-3">
+            <div className="mt-4 flex w-full items-center justify-between gap-3">
               <p className="flex min-w-0 items-center gap-2 text-[10px] font-medium text-slate-400 sm:text-xs">
-                <CalendarDays size={14} className="shrink-0" />
+                <CalendarDays size={14} className="shrink-0 text-[#3973B9]" />
                 <span className="truncate">{fullDate}</span>
               </p>
 
@@ -362,11 +352,7 @@ export default function Dashboard() {
                 type="button"
                 onClick={handleRefresh}
                 disabled={loading || refreshing}
-                className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-200 sm:px-4 sm:py-3 ${
-                  refreshing
-                    ? 'border-blue-200 bg-blue-50 text-blue-600'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600'
-                } disabled:cursor-not-allowed disabled:opacity-70`}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 shadow-sm transition-all duration-200 hover:border-[#B8CFE6] hover:bg-[#EDF4FB] hover:text-[#102A43] disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
               >
                 <RefreshCw
                   size={15}
@@ -378,7 +364,7 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* Error */}
+        {/* Error message */}
         {error && (
           <div
             role="alert"
@@ -394,30 +380,30 @@ export default function Dashboard() {
 
         {loading ? (
           <div className="space-y-5">
-            <div className="h-64 animate-pulse rounded-3xl bg-slate-200" />
+            <div className="h-64 animate-pulse rounded-2xl bg-slate-200" />
             <div className="grid gap-4 sm:grid-cols-3">
               {[1, 2, 3].map((item) => (
                 <div
                   key={item}
-                  className="h-28 animate-pulse rounded-2xl bg-white"
+                  className="h-28 animate-pulse rounded-xl bg-white"
                 />
               ))}
             </div>
-            <div className="h-80 animate-pulse rounded-2xl bg-white" />
+            <div className="h-80 animate-pulse rounded-xl bg-white" />
           </div>
         ) : (
           <>
-            {/* Main financial overview */}
-            <section className="relative overflow-hidden rounded-[28px] bg-[#111D35] text-white shadow-xl shadow-slate-900/10">
-              <div className="pointer-events-none absolute -right-24 -top-36 h-96 w-96 rounded-full border border-white/[0.06]" />
-              <div className="pointer-events-none absolute -right-8 -top-20 h-72 w-72 rounded-full border border-white/[0.06]" />
-              <div className="pointer-events-none absolute bottom-0 right-1/4 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
+            {/* Main balance overview */}
+            <section className="relative overflow-hidden rounded-2xl bg-[#102A43] text-white shadow-lg shadow-[#102A43]/10">
+              <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full border border-white/[0.07]" />
+              <div className="pointer-events-none absolute -right-8 -top-16 h-64 w-64 rounded-full border border-white/[0.07]" />
+              <div className="pointer-events-none absolute bottom-0 right-1/3 h-48 w-48 rounded-full bg-[#3973B9]/15 blur-3xl" />
 
               <div className="relative grid gap-8 p-5 sm:p-7 lg:grid-cols-[1.3fr_0.7fr] lg:p-9">
                 <div className="flex flex-col justify-between gap-7">
                   <div>
                     <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
-                      <Wallet size={16} />
+                      <Wallet size={16} className="text-[#9FC3E8]" />
                       Your total balance
                     </div>
 
@@ -425,16 +411,15 @@ export default function Dashboard() {
                       {currency(balance)}
                     </h2>
 
-                    <p className="mt-3 max-w-md text-xs leading-5 text-slate-400">
-                      Your overall net position based on all income and
-                      expenses recorded in your account.
+                    <p className="mt-3 max-w-md text-xs leading-5 text-slate-300/75">
+                      Your overall net position based on all income and expenses recorded in your account.
                     </p>
                   </div>
 
                   <div className="flex flex-wrap gap-3">
                     <Link
                       to="/transactions"
-                      className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-xs font-bold text-[#14213A] transition hover:bg-blue-50"
+                      className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-3 text-xs font-bold text-[#102A43] transition-all duration-200 hover:bg-[#EDF4FB] hover:shadow-md"
                     >
                       <Plus size={16} />
                       Add Transaction
@@ -442,7 +427,7 @@ export default function Dashboard() {
 
                     <Link
                       to="/analytics"
-                      className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3 text-xs font-semibold text-white transition hover:bg-white/10"
+                      className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/[0.06] px-4 py-3 text-xs font-semibold text-white transition-all duration-200 hover:border-white/30 hover:bg-white/10"
                     >
                       View Analytics
                       <ArrowUpRight size={15} />
@@ -451,12 +436,12 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 sm:p-5">
+                  <div className="rounded-xl border border-white/10 bg-white/[0.07] p-4 sm:p-5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-300">
                         Total Income
                       </span>
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-400">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300">
                         <TrendingUp size={17} />
                       </span>
                     </div>
@@ -468,12 +453,12 @@ export default function Dashboard() {
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 sm:p-5">
+                  <div className="rounded-xl border border-white/10 bg-white/[0.07] p-4 sm:p-5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-300">
                         Total Expenses
                       </span>
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-400/10 text-rose-400">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-400/10 text-rose-300">
                         <TrendingDown size={17} />
                       </span>
                     </div>
@@ -487,9 +472,9 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="relative flex flex-wrap items-center justify-between gap-2 border-t border-white/10 px-5 py-3 text-[10px] text-slate-400 sm:px-9">
+              <div className="relative flex flex-wrap items-center justify-between gap-2 border-t border-white/10 px-5 py-3 text-[10px] text-slate-300/70 sm:px-9">
                 <span className="flex items-center gap-2">
-                  <ShieldCheck size={13} className="text-emerald-400" />
+                  <ShieldCheck size={13} className="text-emerald-300" />
                   Your financial overview
                 </span>
                 <span>{transactions.length} transactions recorded</span>
@@ -498,9 +483,9 @@ export default function Dashboard() {
 
             {/* Monthly overview */}
             <section>
-              <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
                 <div>
-                  <h2 className="text-lg font-bold tracking-tight">
+                  <h2 className="text-lg font-bold tracking-tight text-[#102A43]">
                     Monthly Overview
                   </h2>
                   <p className="mt-1 text-xs text-slate-500">
@@ -510,7 +495,7 @@ export default function Dashboard() {
 
                 <Link
                   to="/analytics"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#3973B9] transition hover:text-[#102A43]"
                 >
                   View report <ArrowRight size={14} />
                 </Link>
@@ -555,16 +540,16 @@ export default function Dashboard() {
               </div>
             </section>
 
-            {/* Trends and category breakdown */}
+            {/* Financial performance and categories */}
             <section className="grid items-start gap-5 xl:grid-cols-[1.65fr_0.85fr]">
-              <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_2px_12px_rgba(16,42,67,0.035)] transition-shadow duration-300 hover:shadow-md">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-6">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                      <BarChart3 size={18} />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EDF4FB] text-[#3973B9]">
+                      <BarChart3 size={19} />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold">
+                      <h2 className="text-sm font-bold text-[#102A43]">
                         Financial Performance
                       </h2>
                       <p className="mt-0.5 text-[10px] text-slate-400">
@@ -573,19 +558,19 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-[10px] font-bold text-slate-500">
+                  <span className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-bold tracking-wider text-slate-500">
                     LAST 6 MONTHS
                   </span>
                 </div>
 
                 {hasTrendData ? (
                   <>
-                    <div className="grid grid-cols-2 gap-3 px-4 pt-4 sm:px-6">
+                    <div className="grid grid-cols-2 gap-3 px-4 pt-5 sm:px-6">
                       <div>
                         <p className="text-[10px] font-medium text-slate-400">
                           Income this month
                         </p>
-                        <p className="mt-1 text-lg font-bold text-slate-900">
+                        <p className="mt-1 text-lg font-bold text-[#102A43]">
                           {currency(monthlyIncome)}
                         </p>
                       </div>
@@ -593,7 +578,7 @@ export default function Dashboard() {
                         <p className="text-[10px] font-medium text-slate-400">
                           Expenses this month
                         </p>
-                        <p className="mt-1 text-lg font-bold text-slate-900">
+                        <p className="mt-1 text-lg font-bold text-[#102A43]">
                           {currency(monthlyExpenses)}
                         </p>
                       </div>
@@ -618,8 +603,8 @@ export default function Dashboard() {
                               x2="0"
                               y2="1"
                             >
-                              <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2} />
-                              <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                              <stop offset="5%" stopColor="#3973B9" stopOpacity={0.18} />
+                              <stop offset="95%" stopColor="#3973B9" stopOpacity={0} />
                             </linearGradient>
 
                             <linearGradient
@@ -629,14 +614,14 @@ export default function Dashboard() {
                               x2="0"
                               y2="1"
                             >
-                              <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.16} />
-                              <stop offset="95%" stopColor="#F43F5E" stopOpacity={0} />
+                              <stop offset="5%" stopColor="#E16B72" stopOpacity={0.14} />
+                              <stop offset="95%" stopColor="#E16B72" stopOpacity={0} />
                             </linearGradient>
                           </defs>
 
                           <CartesianGrid
-                            stroke="#EDF1F6"
-                            strokeDasharray="4 4"
+                            stroke="#EAF0F6"
+                            strokeDasharray="4 5"
                             vertical={false}
                           />
 
@@ -666,10 +651,10 @@ export default function Dashboard() {
                               name === 'income' ? 'Income' : 'Expenses',
                             ]}
                             contentStyle={{
-                              borderRadius: 12,
+                              borderRadius: 10,
                               border: '1px solid #E2E8F0',
                               fontSize: 12,
-                              boxShadow: '0 8px 30px rgba(15,23,42,0.08)',
+                              boxShadow: '0 8px 24px rgba(16,42,67,0.08)',
                             }}
                           />
 
@@ -677,28 +662,28 @@ export default function Dashboard() {
                             type="monotone"
                             dataKey="income"
                             name="income"
-                            stroke="#2563EB"
+                            stroke="#3973B9"
                             strokeWidth={2.5}
                             fill="url(#dashboardIncomeGradient)"
-                            activeDot={{ r: 5 }}
+                            activeDot={{ r: 5, fill: '#3973B9' }}
                           />
 
                           <Area
                             type="monotone"
                             dataKey="expenses"
                             name="expenses"
-                            stroke="#F43F5E"
+                            stroke="#E16B72"
                             strokeWidth={2.5}
                             fill="url(#dashboardExpenseGradient)"
-                            activeDot={{ r: 5 }}
+                            activeDot={{ r: 5, fill: '#E16B72' }}
                           />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
 
                     <div className="flex items-center justify-center gap-6 border-t border-slate-100 px-4 py-3">
-                      <Legend color="bg-blue-600" label="Income" />
-                      <Legend color="bg-rose-500" label="Expenses" />
+                      <Legend color="bg-[#3973B9]" label="Income" />
+                      <Legend color="bg-[#E16B72]" label="Expenses" />
                     </div>
                   </>
                 ) : (
@@ -713,28 +698,28 @@ export default function Dashboard() {
               </div>
 
               {/* Category breakdown */}
-              <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <div className="min-w-0 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_2px_12px_rgba(16,42,67,0.035)] sm:p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-sm font-bold">
+                    <h2 className="text-sm font-bold text-[#102A43]">
                       Spending Breakdown
                     </h2>
                     <p className="mt-1 text-[10px] text-slate-400">
                       By category · {monthName}
                     </p>
                   </div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-                    <CircleDollarSign size={18} />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EDF4FB] text-[#3973B9]">
+                    <CircleDollarSign size={19} />
                   </div>
                 </div>
 
                 {categoryData.length > 0 ? (
                   <>
-                    <div className="mt-5 rounded-xl bg-slate-50 p-4">
+                    <div className="mt-5 rounded-xl border border-slate-100 bg-[#F7F9FC] p-4">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                         Total categorized spending
                       </p>
-                      <p className="mt-1 text-2xl font-bold tracking-tight">
+                      <p className="mt-1 text-2xl font-bold tracking-tight text-[#102A43]">
                         {currency(totalCategorySpending)}
                       </p>
                     </div>
@@ -757,14 +742,14 @@ export default function Dashboard() {
                                   {category}
                                 </span>
                               </div>
-                              <span className="shrink-0 text-xs font-bold text-slate-800">
+                              <span className="shrink-0 text-xs font-bold text-[#102A43]">
                                 {percentage.toFixed(0)}%
                               </span>
                             </div>
 
                             <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
                               <div
-                                className={`h-full rounded-full transition-all ${categoryColors[index]}`}
+                                className={`h-full rounded-full transition-all duration-500 ${categoryColors[index]}`}
                                 style={{ width: `${percentage}%` }}
                               />
                             </div>
@@ -779,7 +764,7 @@ export default function Dashboard() {
 
                     <Link
                       to="/analytics"
-                      className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-bold text-blue-600 transition hover:text-blue-800"
+                      className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-bold text-[#3973B9] transition hover:text-[#102A43]"
                     >
                       Explore all categories
                       <ArrowUpRight size={15} />
@@ -797,15 +782,15 @@ export default function Dashboard() {
               </div>
             </section>
 
-            {/* Insights and navigation */}
+            {/* Financial insights and quick navigation */}
             <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_2px_12px_rgba(16,42,67,0.035)] sm:p-5">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EDF4FB] text-[#3973B9]">
                     <Sparkles size={19} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold">
+                    <h2 className="text-sm font-bold text-[#102A43]">
                       Financial Insights
                     </h2>
                     <p className="mt-0.5 text-[10px] text-slate-400">
@@ -815,11 +800,11 @@ export default function Dashboard() {
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl bg-slate-50 p-4">
+                  <div className="rounded-xl border border-slate-100 bg-[#F7F9FC] p-4">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                       Highest spending category
                     </p>
-                    <p className="mt-2 truncate text-lg font-bold text-slate-900">
+                    <p className="mt-2 truncate text-lg font-bold text-[#102A43]">
                       {topCategory ? topCategory[0] : 'No data'}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
@@ -829,7 +814,7 @@ export default function Dashboard() {
                     </p>
                   </div>
 
-                  <div className="rounded-xl bg-slate-50 p-4">
+                  <div className="rounded-xl border border-slate-100 bg-[#F7F9FC] p-4">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                       Compared with last month
                     </p>
@@ -867,10 +852,10 @@ export default function Dashboard() {
                 </div>
 
                 <div
-                  className={`mt-3 flex items-start gap-3 rounded-xl p-4 ${
+                  className={`mt-3 flex items-start gap-3 rounded-xl border p-4 ${
                     spendingAlert
-                      ? 'border border-rose-100 bg-rose-50'
-                      : 'border border-blue-100 bg-blue-50'
+                      ? 'border-rose-100 bg-rose-50'
+                      : 'border-[#DCE8F4] bg-[#EDF4FB]'
                   }`}
                 >
                   {spendingAlert ? (
@@ -881,13 +866,13 @@ export default function Dashboard() {
                   ) : (
                     <Lightbulb
                       size={18}
-                      className="mt-0.5 shrink-0 text-blue-600"
+                      className="mt-0.5 shrink-0 text-[#3973B9]"
                     />
                   )}
 
                   <p
                     className={`text-xs leading-5 ${
-                      spendingAlert ? 'text-rose-700' : 'text-blue-700'
+                      spendingAlert ? 'text-rose-700' : 'text-[#315C85]'
                     }`}
                   >
                     {spendingAlert
@@ -900,15 +885,17 @@ export default function Dashboard() {
               </div>
 
               {/* Quick navigation */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_2px_12px_rgba(16,42,67,0.035)] sm:p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-sm font-bold">Quick Navigation</h2>
+                    <h2 className="text-sm font-bold text-[#102A43]">
+                      Quick Navigation
+                    </h2>
                     <p className="mt-1 text-[10px] text-slate-400">
                       Your financial tools
                     </p>
                   </div>
-                  <Activity size={19} className="text-slate-400" />
+                  <Activity size={19} className="text-[#3973B9]" />
                 </div>
 
                 <div className="mt-4 space-y-2">
@@ -919,7 +906,7 @@ export default function Dashboard() {
                       <Link
                         key={action.path}
                         to={action.path}
-                        className="group flex items-center gap-3 rounded-xl border border-transparent p-2.5 transition hover:border-slate-100 hover:bg-slate-50"
+                        className="group flex items-center gap-3 rounded-xl border border-transparent p-2.5 transition-all duration-200 hover:border-[#E2EAF2] hover:bg-[#F7F9FC]"
                       >
                         <div
                           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${action.color}`}
@@ -928,7 +915,7 @@ export default function Dashboard() {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-slate-800">
+                          <p className="text-xs font-bold text-[#102A43]">
                             {action.title}
                           </p>
                           <p className="mt-0.5 text-[10px] text-slate-400">
@@ -938,7 +925,7 @@ export default function Dashboard() {
 
                         <ChevronRight
                           size={16}
-                          className="shrink-0 text-slate-300 transition group-hover:translate-x-1 group-hover:text-blue-600"
+                          className="shrink-0 text-slate-300 transition group-hover:translate-x-1 group-hover:text-[#3973B9]"
                         />
                       </Link>
                     )
@@ -948,14 +935,14 @@ export default function Dashboard() {
             </section>
 
             {/* Recent transactions */}
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_2px_12px_rgba(16,42,67,0.035)]">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-6">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EDF4FB] text-[#3973B9]">
                     <ReceiptText size={19} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold">
+                    <h2 className="text-sm font-bold text-[#102A43]">
                       Recent Transactions
                     </h2>
                     <p className="mt-0.5 text-[10px] text-slate-400">
@@ -966,7 +953,7 @@ export default function Dashboard() {
 
                 <Link
                   to="/transactions"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#3973B9] transition hover:text-[#102A43]"
                 >
                   View all
                   <ArrowRight size={14} />
@@ -989,7 +976,7 @@ export default function Dashboard() {
                     return (
                       <div
                         key={item.id}
-                        className="flex min-w-0 items-center gap-3 px-4 py-3.5 transition hover:bg-slate-50 sm:px-6"
+                        className="flex min-w-0 items-center gap-3 px-4 py-3.5 transition-colors duration-200 hover:bg-[#F8FAFC] sm:px-6"
                       >
                         <div
                           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
@@ -1006,7 +993,7 @@ export default function Dashboard() {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-bold text-slate-800 sm:text-sm">
+                          <p className="truncate text-xs font-bold text-[#102A43] sm:text-sm">
                             {item.title || 'Untitled transaction'}
                           </p>
                           <p className="mt-1 truncate text-[10px] text-slate-400 sm:text-xs">
@@ -1019,7 +1006,7 @@ export default function Dashboard() {
                         <div className="shrink-0 text-right">
                           <p
                             className={`text-xs font-bold sm:text-sm ${
-                              isIncome ? 'text-emerald-600' : 'text-slate-900'
+                              isIncome ? 'text-emerald-600' : 'text-[#102A43]'
                             }`}
                           >
                             {isIncome ? '+' : '-'}
@@ -1039,13 +1026,13 @@ export default function Dashboard() {
                 </div>
               )}
 
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-6">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 bg-[#F8FAFC] px-4 py-3 sm:px-6">
                 <span className="text-[10px] text-slate-400">
                   Showing {recentTransactions.length} of {transactions.length} records
                 </span>
                 <Link
                   to="/transactions"
-                  className="text-[10px] font-bold text-blue-600 hover:text-blue-800"
+                  className="text-[10px] font-bold text-[#3973B9] transition hover:text-[#102A43]"
                 >
                   Manage transactions
                 </Link>
@@ -1055,10 +1042,11 @@ export default function Dashboard() {
             {/* Footer */}
             <footer className="flex flex-col items-center justify-between gap-2 border-t border-slate-200 py-4 text-[10px] text-slate-400 sm:flex-row">
               <span>
-                © {new Date().getFullYear()} Smart Expense. All rights reserved.
+                © {new Date().getFullYear()} Smart Expense. All rights reserved.<span><br></br> # Designed and developed by Mutahir Showket
+                  </span>
               </span>
               <span className="flex items-center gap-1.5">
-                <ShieldCheck size={13} />
+                <ShieldCheck size={13} className="text-[#3973B9]" />
                 Your finances, organized with confidence.
               </span>
             </footer>
@@ -1074,19 +1062,19 @@ function MetricCard({ label, value, icon: Icon, color, detail }) {
   const styles = {
     emerald: {
       icon: 'bg-emerald-50 text-emerald-600',
-      accent: 'border-l-emerald-500',
+      accent: 'border-t-emerald-500',
     },
     rose: {
       icon: 'bg-rose-50 text-rose-600',
-      accent: 'border-l-rose-500',
+      accent: 'border-t-rose-500',
     },
     blue: {
-      icon: 'bg-blue-50 text-blue-600',
-      accent: 'border-l-blue-500',
+      icon: 'bg-[#EDF4FB] text-[#3973B9]',
+      accent: 'border-t-[#3973B9]',
     },
     violet: {
       icon: 'bg-violet-50 text-violet-600',
-      accent: 'border-l-violet-500',
+      accent: 'border-t-violet-500',
     },
   }
 
@@ -1094,7 +1082,7 @@ function MetricCard({ label, value, icon: Icon, color, detail }) {
 
   return (
     <div
-      className={`min-w-0 rounded-xl border border-slate-200 border-l-[3px] ${style.accent} bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-4`}
+      className={`min-w-0 rounded-xl border border-slate-200/80 border-t-[3px] ${style.accent} bg-white p-3.5 shadow-[0_2px_10px_rgba(16,42,67,0.035)] transition-all duration-200 hover:-translate-y-1 hover:shadow-md sm:p-4`}
     >
       <div className="flex items-center justify-between gap-2">
         <p className="text-[10px] font-semibold text-slate-500 sm:text-xs">
@@ -1107,7 +1095,7 @@ function MetricCard({ label, value, icon: Icon, color, detail }) {
         </div>
       </div>
 
-      <p className="mt-3 break-all text-base font-bold tracking-tight text-slate-900 sm:text-xl">
+      <p className="mt-3 break-all text-base font-bold tracking-tight text-[#102A43] sm:text-xl">
         {value}
       </p>
 
@@ -1132,18 +1120,21 @@ function Legend({ color, label }) {
 function EmptyState({ icon: Icon, title, description, link, linkText }) {
   return (
     <div className="flex min-h-[210px] flex-col items-center justify-center px-5 py-10 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EDF4FB] text-[#3973B9]">
         <Icon size={23} />
       </div>
-      <h3 className="mt-3 text-sm font-bold text-slate-800">
+
+      <h3 className="mt-3 text-sm font-bold text-[#102A43]">
         {title}
       </h3>
+
       <p className="mt-1 max-w-xs text-xs leading-5 text-slate-400">
         {description}
       </p>
+
       <Link
         to={link}
-        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700"
+        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#102A43] px-4 py-2.5 text-xs font-bold text-white transition-all duration-200 hover:bg-[#173D60] hover:shadow-md"
       >
         {linkText}
         <ArrowRight size={14} />

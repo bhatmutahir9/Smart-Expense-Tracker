@@ -531,18 +531,18 @@ export default function RecurringTransactions() {
   )
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb] px-3 py-5 text-slate-900 sm:px-5 lg:px-7">
+    <div className="min-h-screen bg-[#F3F7FB] px-3 py-5 text-slate-900 sm:px-5 lg:px-7">
       <div className="mx-auto max-w-7xl space-y-5">
 
         {/* Header */}
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <div className="mb-1.5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-indigo-600">
+            <div className="mb-1.5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[#3973B9]">
               <Repeat size={15} />
               Financial Management
             </div>
 
-            <h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">
+            <h1 className="text-2xl font-bold tracking-tight text-[#102A43] sm:text-[28px]">
               Recurring Transactions
             </h1>
 
@@ -555,7 +555,7 @@ export default function RecurringTransactions() {
             <button
               onClick={() => refreshData(true)}
               disabled={syncing}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-60 sm:flex-none"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-[#D8E6F4] hover:text-[#3973B9] disabled:opacity-60 sm:flex-none"
             >
               <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
               Refresh
@@ -563,7 +563,7 @@ export default function RecurringTransactions() {
 
             <button
               onClick={openCreateModal}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition hover:bg-indigo-700 sm:flex-none"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#102A43] px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#102A43]/15 transition hover:bg-[#173D60] sm:flex-none"
             >
               <Plus size={17} />
               Add Recurring
@@ -594,7 +594,7 @@ export default function RecurringTransactions() {
             title="Total Rules"
             value={rules.length}
             icon={<Repeat size={18} />}
-            color="indigo"
+            color="blue"
           />
 
           <SummaryCard
@@ -671,7 +671,7 @@ export default function RecurringTransactions() {
             icon={<CalendarDays size={19} />}
             title="Upcoming & Pending"
             subtitle="Billing cycles waiting for confirmation"
-            color="indigo"
+            color="blue"
           />
 
           {loading ? (
@@ -691,7 +691,7 @@ export default function RecurringTransactions() {
                 return (
                   <div
                     key={payment.id}
-                    className="flex flex-col justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 transition hover:border-slate-200 sm:flex-row sm:items-center"
+                    className="flex flex-col justify-between gap-3 rounded-xl border border-slate-100 bg-[#F3F7FB]/70 p-3.5 transition hover:border-[#D8E6F4] sm:flex-row sm:items-center"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <div
@@ -736,7 +736,7 @@ export default function RecurringTransactions() {
                         className={`min-w-[125px] rounded-lg px-3 py-2 text-xs font-bold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
                           isIncome
                             ? 'bg-emerald-600 hover:bg-emerald-700'
-                            : 'bg-indigo-600 hover:bg-indigo-700'
+                            : 'bg-[#102A43] hover:bg-[#173D60]'
                         }`}
                       >
                         {updatingPayment === payment.id
@@ -760,7 +760,7 @@ export default function RecurringTransactions() {
               icon={<History size={19} />}
               title="Payment History"
               subtitle="A record of every recurring billing cycle"
-              color="violet"
+              color="blue"
             />
           </div>
 
@@ -782,7 +782,7 @@ export default function RecurringTransactions() {
                 return (
                   <div
                     key={payment.id}
-                    className="flex flex-col justify-between gap-3 px-4 py-3.5 transition hover:bg-slate-50/70 sm:flex-row sm:items-center sm:px-5"
+                    className="flex flex-col justify-between gap-3 px-4 py-3.5 transition hover:bg-[#F3F7FB]/70 sm:flex-row sm:items-center sm:px-5"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <div
@@ -844,7 +844,7 @@ export default function RecurringTransactions() {
                             ? isIncome ? 'Undo received' : 'Undo paid'
                             : isIncome ? 'Mark received' : 'Mark paid'
                         }
-                        className="rounded-lg border border-slate-200 p-2 text-slate-500 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50"
+                        className="rounded-lg border border-slate-200 p-2 text-slate-500 transition hover:border-[#D8E6F4] hover:bg-[#EDF4FB] hover:text-[#3973B9] disabled:opacity-50"
                       >
                         {updatingPayment === payment.id ? (
                           <RefreshCw size={15} className="animate-spin" />
@@ -867,7 +867,7 @@ export default function RecurringTransactions() {
           <div className="border-b border-slate-100 p-4 sm:p-5">
             <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
               <div>
-                <h2 className="text-base font-bold text-slate-900">
+                <h2 className="text-base font-bold text-[#102A43]">
                   All Recurring Transactions
                 </h2>
 
@@ -887,14 +887,14 @@ export default function RecurringTransactions() {
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search transactions..."
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs outline-none transition focus:border-indigo-400 focus:bg-white sm:w-52"
+                    className="w-full rounded-xl border border-slate-200 bg-[#F3F7FB] py-2 pl-9 pr-3 text-xs outline-none transition focus:border-[#3973B9] focus:bg-white sm:w-52"
                   />
                 </div>
 
                 <select
                   value={filter}
                   onChange={(event) => setFilter(event.target.value)}
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-indigo-400"
+                  className="rounded-xl border border-slate-200 bg-[#F3F7FB] px-3 py-2 text-xs outline-none focus:border-[#3973B9]"
                 >
                   <option value="all">All transactions</option>
                   <option value="pending">Latest cycle pending</option>
@@ -922,7 +922,7 @@ export default function RecurringTransactions() {
                 return (
                   <div
                     key={rule.id}
-                    className="flex flex-col justify-between gap-3 p-4 transition hover:bg-slate-50/60 sm:flex-row sm:items-center sm:px-5"
+                    className="flex flex-col justify-between gap-3 p-4 transition hover:bg-[#F3F7FB]/60 sm:flex-row sm:items-center sm:px-5"
                   >
                     <div className="flex min-w-0 items-start gap-3">
                       <div
@@ -1030,7 +1030,7 @@ export default function RecurringTransactions() {
             <div className="my-auto w-full max-w-lg overflow-hidden rounded-2xl border border-white/60 bg-white shadow-2xl">
               <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">
+                  <h2 className="text-lg font-bold text-[#102A43]">
                     {editingId ? 'Edit Recurring Rule' : 'New Recurring Rule'}
                   </h2>
 
@@ -1193,7 +1193,7 @@ export default function RecurringTransactions() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="flex-1 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60"
+                    className="flex-1 rounded-xl bg-[#102A43] py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#173D60] disabled:opacity-60"
                   >
                     {saving
                       ? 'Saving...'
@@ -1219,25 +1219,25 @@ export default function RecurringTransactions() {
 
         .form-input {
           width: 100%;
-          border: 1px solid #e2e8f0;
+          border: 1px solid #D8E6F4;
           border-radius: 10px;
-          background: #f8fafc;
+          background: #F3F7FB;
           padding: 10px 11px;
-          color: #0f172a;
+          color: #102A43;
           outline: none;
           font-size: 13px;
           transition: border-color 150ms, box-shadow 150ms, background 150ms;
         }
 
         .form-input:focus {
-          border-color: #818cf8;
+          border-color: #3973B9;
           background: white;
-          box-shadow: 0 0 0 3px rgb(99 102 241 / 10%);
+          box-shadow: 0 0 0 3px rgb(57 115 185 / 10%);
         }
 
         .form-input option {
           background: white;
-          color: #0f172a;
+          color: #102A43;
         }
       `}</style>
     </div>
@@ -1247,7 +1247,7 @@ export default function RecurringTransactions() {
 // Summary Card Component
 function SummaryCard({ title, value, icon, color }) {
   const colors = {
-    indigo: 'bg-indigo-50 text-indigo-600',
+    blue: 'bg-[#EDF4FB] text-[#3973B9]',
     amber: 'bg-amber-50 text-amber-600',
     emerald: 'bg-emerald-50 text-emerald-600',
     rose: 'bg-rose-50 text-rose-600',
@@ -1263,7 +1263,7 @@ function SummaryCard({ title, value, icon, color }) {
         </div>
       </div>
 
-      <p className="mt-3 break-words text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+      <p className="mt-3 break-words text-xl font-bold tracking-tight text-[#102A43] sm:text-2xl">
         {value}
       </p>
     </div>
@@ -1294,8 +1294,7 @@ function Alert({ type, message, onClose }) {
 // Section Heading Component
 function SectionHeading({ icon, title, subtitle, color }) {
   const colors = {
-    indigo: 'bg-indigo-50 text-indigo-600',
-    violet: 'bg-violet-50 text-violet-600',
+    blue: 'bg-[#EDF4FB] text-[#3973B9]',
   }
 
   return (
@@ -1305,7 +1304,7 @@ function SectionHeading({ icon, title, subtitle, color }) {
       </div>
 
       <div>
-        <h2 className="text-sm font-bold text-slate-900">{title}</h2>
+        <h2 className="text-sm font-bold text-[#102A43]">{title}</h2>
         <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>
       </div>
     </div>
@@ -1316,7 +1315,7 @@ function SectionHeading({ icon, title, subtitle, color }) {
 function LoadingState({ text }) {
   return (
     <div className="py-9 text-center text-xs text-slate-500">
-      <RefreshCw size={18} className="mx-auto mb-2 animate-spin text-indigo-500" />
+      <RefreshCw size={18} className="mx-auto mb-2 animate-spin text-[#3973B9]" />
       {text}
     </div>
   )
@@ -1325,12 +1324,12 @@ function LoadingState({ text }) {
 // Empty State Component
 function EmptyState({ icon, title, description }) {
   return (
-    <div className="rounded-xl bg-slate-50/80 px-4 py-8 text-center">
-      <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm">
+    <div className="rounded-xl bg-[#F3F7FB]/80 px-4 py-8 text-center">
+      <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#3973B9] shadow-sm">
         {icon}
       </div>
 
-      <p className="text-sm font-semibold text-slate-700">{title}</p>
+      <p className="text-sm font-semibold text-[#102A43]">{title}</p>
       <p className="mt-1 text-xs text-slate-500">{description}</p>
     </div>
   )
@@ -1346,7 +1345,7 @@ function ActionButton({ children, title, onClick, danger = false }) {
       className={`rounded-lg border border-slate-200 p-2 transition ${
         danger
           ? 'text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600'
-          : 'text-slate-500 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600'
+          : 'text-slate-500 hover:border-[#D8E6F4] hover:bg-[#EDF4FB] hover:text-[#3973B9]'
       }`}
     >
       {children}

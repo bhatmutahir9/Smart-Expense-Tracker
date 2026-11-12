@@ -42,7 +42,7 @@ export default function Signup() {
     confirmPassword.length > 0 && password === confirmPassword
 
   const fieldClass =
-    'flex min-h-[52px] items-center rounded-xl border border-slate-200 bg-white px-4 transition-all duration-200 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10'
+    'flex min-h-[52px] items-center rounded-xl border border-[#D8E6F4] bg-[#F3F7FB] px-4 transition-all duration-200 focus-within:border-[#3973B9] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#3973B9]/10'
 
   const inputClass =
     'min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400'
@@ -103,18 +103,18 @@ export default function Signup() {
   }
 
   return (
-    <main className="flex min-h-screen min-h-dvh items-center justify-center bg-[#F4F7FC] px-4 py-8 sm:px-6">
-      <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_-25px_rgba(15,23,42,0.18)] lg:min-h-[700px] lg:grid-cols-[0.95fr_1.05fr]">
+    <main className="flex min-h-screen min-h-dvh items-center justify-center bg-[#F3F7FB] px-4 py-8 sm:px-6">
+      <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl border border-[#D8E6F4] bg-white shadow-[0_20px_60px_-25px_rgba(15,42,67,0.18)] lg:min-h-[700px] lg:grid-cols-[0.95fr_1.05fr]">
 
         {/* Branding panel */}
-        <section className="relative hidden flex-col justify-between overflow-hidden bg-[#1E40AF] p-10 text-white lg:flex xl:p-12">
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-600/40 via-transparent to-indigo-950/50" />
+        <section className="relative hidden flex-col justify-between overflow-hidden bg-[#102A43] p-10 text-white lg:flex xl:p-12">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#3973B9]/30 via-transparent to-[#071B2E]/50" />
 
           <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full border border-white/10" />
           <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full border border-white/10" />
 
           <div className="relative z-10 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-blue-700">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#102A43]">
               <Wallet size={23} />
             </div>
 
@@ -122,14 +122,14 @@ export default function Signup() {
               <h1 className="text-lg font-bold tracking-tight">
                 Smart Expense
               </h1>
-              <p className="text-xs text-blue-200">
+              <p className="text-xs text-[#D8E6F4]">
                 Personal Finance Manager
               </p>
             </div>
           </div>
 
           <div className="relative z-10 my-12">
-            <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-blue-200">
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-[#A9C9EB]">
               Better financial habits start here
             </p>
 
@@ -139,7 +139,7 @@ export default function Signup() {
               under control.
             </h2>
 
-            <p className="mt-6 max-w-sm text-sm leading-7 text-blue-100">
+            <p className="mt-6 max-w-sm text-sm leading-7 text-[#D8E6F4]">
               One place to track your transactions, manage budgets
               and make smarter decisions about your money.
             </p>
@@ -147,7 +147,7 @@ export default function Signup() {
             <div className="mt-10 max-w-sm rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-blue-200">
+                  <p className="text-xs text-[#D8E6F4]">
                     Financial overview
                   </p>
                   <p className="mt-1 text-base font-semibold">
@@ -172,14 +172,14 @@ export default function Signup() {
                 )}
               </div>
 
-              <div className="mt-4 flex items-center gap-2 border-t border-white/15 pt-4 text-xs text-blue-100">
+              <div className="mt-4 flex items-center gap-2 border-t border-white/15 pt-4 text-xs text-[#D8E6F4]">
                 <CircleCheck size={15} />
                 <span>Everything organized in one dashboard</span>
               </div>
             </div>
           </div>
 
-          <div className="relative z-10 flex items-center gap-2 text-xs text-blue-200">
+          <div className="relative z-10 flex items-center gap-2 text-xs text-[#D8E6F4]">
             <ShieldCheck size={16} />
             <span>Designed for smarter money management</span>
           </div>
@@ -191,12 +191,12 @@ export default function Signup() {
 
             {/* Mobile brand */}
             <div className="mb-9 flex items-center gap-3 lg:hidden">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#102A43] text-white shadow-lg shadow-[#102A43]/20">
                 <Wallet size={23} />
               </div>
 
               <div>
-                <h1 className="text-lg font-bold text-slate-900">
+                <h1 className="text-lg font-bold text-[#102A43]">
                   Smart Expense
                 </h1>
                 <p className="text-xs text-slate-500">
@@ -207,15 +207,15 @@ export default function Signup() {
 
             {/* Heading */}
             <div className="mb-8">
-              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[#EDF4FB] text-[#3973B9]">
                 <Wallet size={22} />
               </div>
 
-              <p className="mb-2 text-sm font-semibold text-blue-600">
+              <p className="mb-2 text-sm font-semibold text-[#3973B9]">
                 Create your account
               </p>
 
-              <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+              <h2 className="text-3xl font-bold tracking-tight text-[#102A43]">
                 Get started today.
               </h2>
 
@@ -279,7 +279,7 @@ export default function Signup() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((value) => !value)}
-                    className="rounded-md p-1 text-slate-400 transition hover:text-blue-600"
+                    className="rounded-md p-1 text-slate-400 transition hover:text-[#3973B9]"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -296,7 +296,7 @@ export default function Signup() {
                             strength >= level
                               ? strength === 3
                                 ? 'bg-emerald-500'
-                                : 'bg-blue-500'
+                                : 'bg-[#3973B9]'
                               : 'bg-slate-200'
                           }`}
                         />
@@ -347,7 +347,7 @@ export default function Signup() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword((value) => !value)}
-                    className="rounded-md p-1 text-slate-400 transition hover:text-blue-600"
+                    className="rounded-md p-1 text-slate-400 transition hover:text-[#3973B9]"
                     aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                   >
                     {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -382,7 +382,7 @@ export default function Signup() {
               <button
                 type="submit"
                 disabled={loading || strength !== 3 || !passwordsMatch}
-                className="group flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition duration-200 hover:bg-blue-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                className="group flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#102A43] px-5 py-3.5 text-sm font-semibold text-white shadow-sm shadow-[#102A43]/20 transition duration-200 hover:bg-[#173D60] hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#3973B9]/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Creating account...' : 'Create account'}
 
@@ -393,10 +393,10 @@ export default function Signup() {
             </form>
 
             {/* Login */}
-            <div className="mt-8 border-t border-slate-100 pt-6 text-center">
+            <div className="mt-8 border-t border-[#D8E6F4] pt-6 text-center">
               <p className="text-sm text-slate-500">
                 Already have an account?{' '}
-                <Link to="/login" className="font-semibold text-blue-600 transition hover:text-blue-700">
+                <Link to="/login" className="font-semibold text-[#3973B9] transition hover:text-[#102A43]">
                   Sign in
                 </Link>
               </p>

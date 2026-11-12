@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from 'react'
 import {
   BarChart3,
@@ -15,14 +16,14 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/useAuth'
 
 const categoryColors = [
-  'bg-blue-500',
-  'bg-violet-500',
-  'bg-emerald-500',
-  'bg-amber-500',
-  'bg-rose-500',
-  'bg-cyan-500',
-  'bg-indigo-500',
-  'bg-orange-500',
+  'bg-[#102A43]',
+  'bg-[#3973B9]',
+  'bg-[#5B8FC5]',
+  'bg-[#7BA6D2]',
+  'bg-[#A0BDDC]',
+  'bg-[#315F8D]',
+  'bg-[#648BB4]',
+  'bg-[#8CAAC9]',
 ]
 
 const currency = (value) =>
@@ -231,18 +232,18 @@ export default function Analytics() {
   const hasTransactions = transactions.length > 0
 
   return (
-    <main className="min-h-screen bg-[#F5F7FC] px-4 py-8 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#F3F7FB] px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-8">
 
         {/* Page heading */}
         <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <div>
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-blue-600">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#3973B9]">
               <BarChart3 size={17} />
               Financial insights
             </div>
 
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+            <h1 className="text-2xl font-extrabold tracking-tight text-[#102A43] sm:text-3xl">
               Analytics Overview
             </h1>
 
@@ -255,7 +256,7 @@ export default function Analytics() {
             type="button"
             onClick={() => loadAnalytics(true)}
             disabled={loading || refreshing}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-[#102A43] shadow-sm transition hover:border-[#C7D9EB] hover:bg-[#F3F7FB] hover:text-[#3973B9] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCw
               size={16}
@@ -305,11 +306,11 @@ export default function Analytics() {
               icon: Wallet,
               color:
                 analytics.savings >= 0
-                  ? 'text-blue-600'
+                  ? 'text-[#3973B9]'
                   : 'text-rose-600',
               bg:
                 analytics.savings >= 0
-                  ? 'bg-blue-50'
+                  ? 'bg-[#EDF4FB]'
                   : 'bg-rose-50',
               sign: null,
             },
@@ -318,8 +319,8 @@ export default function Analytics() {
               value: analytics.totalTransactions,
               isCount: true,
               icon: ReceiptText,
-              color: 'text-violet-600',
-              bg: 'bg-violet-50',
+              color: 'text-[#3973B9]',
+              bg: 'bg-[#EDF4FB]',
               sign: null,
             },
           ].map((card) => {
@@ -344,7 +345,7 @@ export default function Analytics() {
                   {card.title}
                 </p>
 
-                <h2 className="mt-1 break-words text-2xl font-extrabold tracking-tight text-slate-900">
+                <h2 className="mt-1 break-words text-2xl font-extrabold tracking-tight text-[#102A43]">
                   {loading
                     ? '...'
                     : card.isCount
@@ -363,7 +364,7 @@ export default function Analytics() {
           <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6 lg:col-span-2">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">
+                <h2 className="text-lg font-bold text-[#102A43]">
                   Income vs Expenses
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
@@ -373,7 +374,7 @@ export default function Analytics() {
 
               <div className="flex flex-wrap items-center gap-4 text-xs font-semibold">
                 <span className="flex items-center gap-2 text-slate-600">
-                  <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#3973B9]" />
                   Income
                 </span>
 
@@ -389,7 +390,7 @@ export default function Analytics() {
             ) : !hasTransactions ? (
               <div className="flex h-64 flex-col items-center justify-center text-center">
                 <BarChart3 size={34} className="text-slate-300" />
-                <p className="mt-3 font-semibold text-slate-700">
+                <p className="mt-3 font-semibold text-[#102A43]">
                   No financial data yet
                 </p>
                 <p className="mt-1 text-sm text-slate-400">
@@ -414,7 +415,7 @@ export default function Analytics() {
                         <div className="flex h-full w-full items-end justify-center gap-1 sm:gap-2">
                           <div
                             title={`Income: ${currency(month.income)}`}
-                            className="w-full max-w-8 rounded-t-md bg-blue-500 transition-all duration-500 hover:bg-blue-600"
+                            className="w-full max-w-8 rounded-t-md bg-[#3973B9] transition-all duration-500 hover:bg-[#102A43]"
                             style={{
                               height: `${Math.max(incomeHeight, month.income > 0 ? 2 : 0)}%`,
                             }}
@@ -438,11 +439,11 @@ export default function Analytics() {
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-blue-50 p-3">
-                    <p className="text-xs font-medium text-blue-600">
+                  <div className="rounded-xl bg-[#EDF4FB] p-3">
+                    <p className="text-xs font-medium text-[#3973B9]">
                       Total income
                     </p>
-                    <p className="mt-1 text-lg font-bold text-blue-800">
+                    <p className="mt-1 text-lg font-bold text-[#102A43]">
                       {currency(
                         analytics.monthlyData.reduce(
                           (sum, item) => sum + item.income,
@@ -473,12 +474,12 @@ export default function Analytics() {
           {/* Expense categories */}
           <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
             <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-violet-50 p-2.5 text-violet-600">
+              <div className="rounded-xl bg-[#EDF4FB] p-2.5 text-[#3973B9]">
                 <PieChart size={20} />
               </div>
 
               <div>
-                <h2 className="font-bold text-slate-900">
+                <h2 className="font-bold text-[#102A43]">
                   Spending Categories
                 </h2>
                 <p className="text-xs text-slate-500">
@@ -505,7 +506,7 @@ export default function Analytics() {
                         <span
                           className={`h-2.5 w-2.5 shrink-0 rounded-full ${categoryColors[index % categoryColors.length]}`}
                         />
-                        <span className="truncate text-sm font-semibold text-slate-700">
+                        <span className="truncate text-sm font-semibold text-[#102A43]">
                           {category.name}
                         </span>
                       </div>
@@ -543,7 +544,7 @@ export default function Analytics() {
                 <CalendarDays size={20} />
               </div>
 
-              <h2 className="font-bold text-slate-900">
+              <h2 className="font-bold text-[#102A43]">
                 Financial Summary
               </h2>
             </div>
@@ -553,7 +554,7 @@ export default function Analytics() {
                 <span className="text-sm text-slate-500">
                   Average expense per transaction
                 </span>
-                <span className="font-bold text-slate-900">
+                <span className="font-bold text-[#102A43]">
                   {loading ? '...' : currency(analytics.averageExpense)}
                 </span>
               </div>
@@ -564,7 +565,7 @@ export default function Analytics() {
                 <span className="text-sm text-slate-500">
                   Expense transactions
                 </span>
-                <span className="font-bold text-slate-900">
+                <span className="font-bold text-[#102A43]">
                   {loading ? '...' : analytics.expenseCount}
                 </span>
               </div>
@@ -575,7 +576,7 @@ export default function Analytics() {
                 <span className="text-sm text-slate-500">
                   Highest spending category
                 </span>
-                <span className="max-w-[50%] truncate text-right font-bold text-slate-900">
+                <span className="max-w-[50%] truncate text-right font-bold text-[#102A43]">
                   {loading
                     ? '...'
                     : analytics.categories[0]?.name || 'No data'}
@@ -584,12 +585,12 @@ export default function Analytics() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-6 text-white shadow-lg shadow-blue-600/15">
-            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-            <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-indigo-300/20 blur-2xl" />
+          <div className="relative overflow-hidden rounded-2xl bg-[#102A43] p-6 text-white shadow-lg shadow-[#102A43]/15">
+            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#3973B9]/20 blur-2xl" />
+            <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-[#5B8FC5]/20 blur-2xl" />
 
             <div className="relative">
-              <div className="flex items-center gap-2 text-blue-100">
+              <div className="flex items-center gap-2 text-[#C7D9EB]">
                 <Wallet size={19} />
                 <span className="text-sm font-semibold">
                   Savings overview
@@ -600,7 +601,7 @@ export default function Analytics() {
                 {loading ? '...' : currency(analytics.savings)}
               </h2>
 
-              <p className="mt-2 max-w-sm text-sm leading-relaxed text-blue-100">
+              <p className="mt-2 max-w-sm text-sm leading-relaxed text-[#D8E6F4]">
                 {loading
                   ? 'Calculating your financial overview...'
                   : analytics.savings >= 0
@@ -610,14 +611,14 @@ export default function Analytics() {
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <div className="rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm">
-                  <p className="text-xs text-blue-100">Income</p>
+                  <p className="text-xs text-[#C7D9EB]">Income</p>
                   <p className="mt-1 font-bold">
                     {loading ? '...' : currency(analytics.income)}
                   </p>
                 </div>
 
                 <div className="rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm">
-                  <p className="text-xs text-blue-100">Expenses</p>
+                  <p className="text-xs text-[#C7D9EB]">Expenses</p>
                   <p className="mt-1 font-bold">
                     {loading ? '...' : currency(analytics.expenses)}
                   </p>
@@ -631,7 +632,7 @@ export default function Analytics() {
         <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
           <div className="flex flex-col justify-between gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:px-6">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">
+              <h2 className="text-lg font-bold text-[#102A43]">
                 Recent Transactions
               </h2>
               <p className="mt-1 text-sm text-slate-500">
@@ -641,7 +642,7 @@ export default function Analytics() {
 
             <a
               href="/transactions"
-              className="text-sm font-bold text-blue-600 transition hover:text-blue-700"
+              className="text-sm font-bold text-[#3973B9] transition hover:text-[#102A43]"
             >
               View all transactions →
             </a>
@@ -662,7 +663,7 @@ export default function Analytics() {
                 size={34}
                 className="mx-auto text-slate-300"
               />
-              <p className="mt-3 font-semibold text-slate-700">
+              <p className="mt-3 font-semibold text-[#102A43]">
                 No transactions found
               </p>
               <p className="mt-1 text-sm text-slate-400">
@@ -677,7 +678,7 @@ export default function Analytics() {
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between gap-3 px-5 py-4 transition hover:bg-slate-50/70 sm:px-6"
+                    className="flex items-center justify-between gap-3 px-5 py-4 transition hover:bg-[#F3F7FB] sm:px-6"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <div
@@ -695,7 +696,7 @@ export default function Analytics() {
                       </div>
 
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-slate-800">
+                        <p className="truncate text-sm font-bold text-[#102A43]">
                           {item.title || 'Untitled transaction'}
                         </p>
                         <p className="mt-1 truncate text-xs text-slate-400">

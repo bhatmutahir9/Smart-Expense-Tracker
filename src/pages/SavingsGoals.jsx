@@ -343,18 +343,18 @@ export default function SavingsGoals() {
       : 0
 
   return (
-    <main className="min-h-screen bg-[#F4F7FC]">
+    <main className="min-h-screen bg-[#F5F7FC]">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
         {/* Header */}
         <section className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#D8E6F4] bg-[#EDF4FB] px-3 py-1.5 text-xs font-bold text-[#3973B9]">
               <Sparkles size={14} />
               PLAN YOUR FINANCIAL FUTURE
             </div>
 
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#102A43] sm:text-4xl">
               Savings Goals
             </h1>
 
@@ -366,7 +366,7 @@ export default function SavingsGoals() {
           <button
             type="button"
             onClick={openCreateForm}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-1 hover:shadow-xl"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#102A43] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#102A43]/20 transition hover:-translate-y-1 hover:bg-[#173D60] hover:shadow-xl"
           >
             <Plus size={19} />
             Create New Goal
@@ -399,7 +399,7 @@ export default function SavingsGoals() {
               title: 'Total Goals',
               value: goals.length,
               icon: Target,
-              color: 'text-blue-600 bg-blue-50',
+              color: 'text-[#3973B9] bg-[#EDF4FB]',
             },
             {
               title: 'Total Saved',
@@ -411,7 +411,7 @@ export default function SavingsGoals() {
               title: 'Total Target',
               value: currency(totalTarget),
               icon: PiggyBank,
-              color: 'text-indigo-600 bg-indigo-50',
+              color: 'text-[#3973B9] bg-[#EDF4FB]',
             },
             {
               title: 'Completed Goals',
@@ -425,7 +425,7 @@ export default function SavingsGoals() {
             return (
               <div
                 key={item.title}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-slate-500">
@@ -437,7 +437,7 @@ export default function SavingsGoals() {
                   </div>
                 </div>
 
-                <h2 className="mt-5 break-all text-2xl font-extrabold text-slate-900">
+                <h2 className="mt-5 break-all text-2xl font-extrabold text-[#102A43]">
                   {item.value}
                 </h2>
               </div>
@@ -446,10 +446,10 @@ export default function SavingsGoals() {
         </section>
 
         {/* Overall progress */}
-        <section className="mb-8 rounded-2xl bg-gradient-to-br from-[#101B35] to-[#1D4ED8] p-6 text-white shadow-xl sm:p-8">
+        <section className="mb-8 rounded-2xl border border-[#173D60] bg-[#102A43] p-6 text-white shadow-xl sm:p-8">
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
             <div>
-              <p className="text-sm font-medium text-blue-100">
+              <p className="text-sm font-medium text-[#D8E6F4]">
                 Overall savings progress
               </p>
 
@@ -457,7 +457,7 @@ export default function SavingsGoals() {
                 {overallProgress.toFixed(1)}%
               </h2>
 
-              <p className="mt-2 text-sm text-blue-100">
+              <p className="mt-2 text-sm text-[#D8E6F4]">
                 {currency(totalSaved)} saved out of {currency(totalTarget)}
               </p>
             </div>
@@ -477,10 +477,10 @@ export default function SavingsGoals() {
 
         {/* Create / Edit form */}
         {showForm && (
-          <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-lg sm:p-8">
+          <section className="mb-8 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-lg sm:p-8">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-extrabold text-slate-900">
+                <h2 className="text-xl font-extrabold text-[#102A43]">
                   {editingGoal ? 'Edit Savings Goal' : 'Create Savings Goal'}
                 </h2>
 
@@ -493,7 +493,7 @@ export default function SavingsGoals() {
                 type="button"
                 onClick={() => setShowForm(false)}
                 aria-label="Close form"
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                className="rounded-lg p-2 text-slate-400 transition hover:bg-[#F3F7FB] hover:text-[#102A43]"
               >
                 <X size={21} />
               </button>
@@ -512,7 +512,7 @@ export default function SavingsGoals() {
                   placeholder="e.g. Buy a new laptop"
                   maxLength={80}
                   required
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#3973B9] focus:ring-4 focus:ring-[#D8E6F4]"
                 />
               </div>
 
@@ -530,7 +530,7 @@ export default function SavingsGoals() {
                   onChange={handleChange}
                   placeholder="60000"
                   required
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#3973B9] focus:ring-4 focus:ring-[#D8E6F4]"
                 />
               </div>
 
@@ -548,7 +548,7 @@ export default function SavingsGoals() {
                   onChange={handleChange}
                   placeholder="0"
                   required
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#3973B9] focus:ring-4 focus:ring-[#D8E6F4]"
                 />
               </div>
 
@@ -563,7 +563,7 @@ export default function SavingsGoals() {
                   value={form.target_date}
                   onChange={handleChange}
                   min={new Date().toLocaleDateString('en-CA')}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#3973B9] focus:ring-4 focus:ring-[#D8E6F4]"
                 />
               </div>
 
@@ -571,7 +571,7 @@ export default function SavingsGoals() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+                  className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-[#F3F7FB]"
                 >
                   Cancel
                 </button>
@@ -579,7 +579,7 @@ export default function SavingsGoals() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#102A43] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#173D60] disabled:opacity-60"
                 >
                   {saving && <Loader2 size={17} className="animate-spin" />}
 
@@ -597,7 +597,7 @@ export default function SavingsGoals() {
         {/* Goals list */}
         <section>
           <div className="mb-5">
-            <h2 className="text-xl font-extrabold text-slate-900">
+            <h2 className="text-xl font-extrabold text-[#102A43]">
               Your Goals
             </h2>
 
@@ -617,11 +617,11 @@ export default function SavingsGoals() {
             </div>
           ) : goals.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-16 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EDF4FB] text-[#3973B9]">
                 <Target size={30} />
               </div>
 
-              <h3 className="mt-5 text-lg font-bold text-slate-900">
+              <h3 className="mt-5 text-lg font-bold text-[#102A43]">
                 No savings goals yet
               </h3>
 
@@ -632,7 +632,7 @@ export default function SavingsGoals() {
               <button
                 type="button"
                 onClick={openCreateForm}
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700"
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#102A43] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#173D60]"
               >
                 <Plus size={18} />
                 Create Your First Goal
@@ -655,16 +655,16 @@ export default function SavingsGoals() {
                 return (
                   <article
                     key={goal.id}
-                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-6"
+                    className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-6"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="rounded-xl bg-indigo-50 p-3 text-indigo-600">
+                        <div className="rounded-xl bg-[#EDF4FB] p-3 text-[#3973B9]">
                           <Target size={23} />
                         </div>
 
                         <div className="min-w-0">
-                          <h3 className="truncate text-lg font-bold text-slate-900">
+                          <h3 className="truncate text-lg font-bold text-[#102A43]">
                             {goal.title}
                           </h3>
 
@@ -686,7 +686,7 @@ export default function SavingsGoals() {
                           type="button"
                           onClick={() => openEditForm(goal)}
                           aria-label={`Edit ${goal.title}`}
-                          className="rounded-lg p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
+                          className="rounded-lg p-2 text-slate-400 transition hover:bg-[#EDF4FB] hover:text-[#3973B9]"
                         >
                           <Pencil size={17} />
                         </button>
@@ -708,7 +708,7 @@ export default function SavingsGoals() {
                           SAVED AMOUNT
                         </p>
 
-                        <p className="mt-1 text-2xl font-extrabold text-slate-900">
+                        <p className="mt-1 text-2xl font-extrabold text-[#102A43]">
                           {currency(saved)}
                         </p>
                       </div>
@@ -727,7 +727,7 @@ export default function SavingsGoals() {
                     <div className="mt-5 flex items-center justify-between text-xs font-bold">
                       <span className="text-slate-500">Progress</span>
 
-                      <span className={completed ? 'text-emerald-600' : 'text-blue-600'}>
+                      <span className={completed ? 'text-emerald-600' : 'text-[#3973B9]'}>
                         {progress.toFixed(1)}%
                       </span>
                     </div>
@@ -737,7 +737,7 @@ export default function SavingsGoals() {
                         className={`h-full rounded-full transition-all duration-700 ${
                           completed
                             ? 'bg-emerald-500'
-                            : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+                            : 'bg-[#3973B9]'
                         }`}
                         style={{ width: `${progress}%` }}
                       />
@@ -778,13 +778,13 @@ export default function SavingsGoals() {
                                 [goal.id]: e.target.value,
                               }))
                             }
-                            className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                            className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[#3973B9] focus:ring-4 focus:ring-[#D8E6F4]"
                           />
 
                           <button
                             type="button"
                             onClick={() => addContribution(goal)}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#102A43] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#173D60]"
                           >
                             <Plus size={16} />
                             Add Money
