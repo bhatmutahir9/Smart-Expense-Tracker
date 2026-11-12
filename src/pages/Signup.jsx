@@ -405,7 +405,7 @@ export default function Signup() {
             {/* Footer */}
             <div className="mt-8 flex items-center justify-center gap-2 text-xs text-slate-400">
               <ShieldCheck size={14} />
-              <span>© {new Date().getFullYear()} Smart Spend Personal Finance</span>
+              <span>© {new Date().getFullYear()} Smart Spend Personal Finance Manager</span>
             </div>
           </div>
         </section>

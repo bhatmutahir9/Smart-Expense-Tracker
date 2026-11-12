@@ -342,7 +342,7 @@ export default function Login() {
             </div>
 
             <p className="mt-5 text-center text-xs text-slate-400">
-              © {new Date().getFullYear()} Smart Spend Personal Finance Tracker 
+              © {new Date().getFullYear()} Smart Spend Personal Finance Manager 
             </p>
 
           </div>
