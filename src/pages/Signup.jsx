@@ -120,7 +120,7 @@ export default function Signup() {
 
             <div>
               <h1 className="text-lg font-bold tracking-tight">
-                Smart Expense
+                Smart Spend
               </h1>
               <p className="text-xs text-[#D8E6F4]">
                 Personal Finance Manager
@@ -197,7 +197,7 @@ export default function Signup() {
 
               <div>
                 <h1 className="text-lg font-bold text-[#102A43]">
-                  Smart Expense
+                  Smart Spend
                 </h1>
                 <p className="text-xs text-slate-500">
                   Personal Finance Manager
@@ -405,7 +405,7 @@ export default function Signup() {
             {/* Footer */}
             <div className="mt-8 flex items-center justify-center gap-2 text-xs text-slate-400">
               <ShieldCheck size={14} />
-              <span>© {new Date().getFullYear()} Smart Expense Tracker</span>
+              <span>© {new Date().getFullYear()} Smart Spend Personal Finance</span>
             </div>
           </div>
         </section>

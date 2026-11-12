@@ -79,7 +79,7 @@ export default function Login() {
 
             <div>
               <h1 className="text-xl font-bold tracking-tight">
-                Smart Expense
+                Smart Spend
               </h1>
               <p className="text-xs text-[#D8E6F4]">
                 Personal Finance Manager
@@ -175,7 +175,7 @@ export default function Login() {
 
               <div>
                 <h1 className="text-lg font-bold text-[#102A43]">
-                  Smart Expense
+                  Smart Spend
                 </h1>
                 <p className="text-xs text-slate-500">
                   Personal Finance Manager
@@ -342,7 +342,7 @@ export default function Login() {
             </div>
 
             <p className="mt-5 text-center text-xs text-slate-400">
-              © {new Date().getFullYear()} Smart Expense Tracker
+              © {new Date().getFullYear()} Smart Spend Personal Finance Tracker 
             </p>
 
           </div>
