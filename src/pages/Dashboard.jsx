@@ -333,10 +333,12 @@ export default function Dashboard() {
               Financial overview
             </div>
 
-            <h1 className="text-3xl font-extrabold tracking-[-0.045em] text-[#102A43] sm:text-4xl lg:text-[42px]">
-              {greeting},{' '}
-              <span className="text-[#3973B9]">{firstName}</span>
-            </h1>
+           <h1 className="text-3xl font-extrabold tracking-[-0.045em] text-[#102A43] sm:text-4xl lg:text-[42px]">
+  {greeting},{' '}
+  <span className="text-[#3973B9]">
+    {firstName.replace(/[^a-zA-Z]/g, '').toLowerCase().replace(/^./, char => char.toUpperCase())}
+  </span>
+</h1>
 
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
               A clear view of your money, spending habits, and financial progress.

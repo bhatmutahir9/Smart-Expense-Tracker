@@ -273,17 +273,33 @@ export default function RecurringTransactions() {
     }
 
     try {
-      if (editingId) {
-        const { error: updateError } = await supabase
-          .from('recurring_transactions')
-          .update(payload)
-          .eq('id', editingId)
-          .eq('user_id', user.id)
+      
+if (editingId) {
+  // First update the recurring rule.
+  const { error: updateError } = await supabase
+    .from('recurring_transactions')
+    .update(payload)
+    .eq('id', editingId)
+    .eq('user_id', user.id)
 
-        if (updateError) throw updateError
+  if (updateError) throw updateError
 
-        setSuccess('Recurring transaction updated.')
-      } else {
+  // Update all pending payment cycles with the latest amount.
+  // Completed payments remain unchanged to preserve history.
+  const { error: paymentUpdateError } = await supabase
+    .from('recurring_transaction_payments')
+    .update({
+      amount: payload.amount,
+    })
+    .eq('recurring_transaction_id', editingId)
+    .eq('user_id', user.id)
+    .eq('payment_status', 'pending')
+
+  if (paymentUpdateError) throw paymentUpdateError
+
+  setSuccess('Recurring transaction and pending payments updated.')
+}
+ else {
         const { error: insertError } = await supabase
           .from('recurring_transactions')
           .insert({
