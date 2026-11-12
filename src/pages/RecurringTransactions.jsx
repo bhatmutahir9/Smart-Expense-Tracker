@@ -1,9 +1,10 @@
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Plus, Repeat, Pencil, Trash2, Pause, Play, X,
   CalendarDays, TrendingDown, TrendingUp, CheckCircle2,
-  Clock3, Wallet, Search, Check, History, RefreshCw,
+  Clock3, Search, Check, History, RefreshCw,
+  ArrowUpRight, ArrowDownRight,
 } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
 import { supabase } from '../lib/supabase'
@@ -36,14 +37,17 @@ const currency = (amount) =>
 const dateFormat = (date) => {
   if (!date) return 'Not scheduled'
 
-  return new Date(`${date}T00:00:00`).toLocaleDateString('en-IN', {
+  const parsedDate = new Date(`${date}T00:00:00`)
+
+  if (Number.isNaN(parsedDate.getTime())) return 'Invalid date'
+
+  return parsedDate.toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   })
 }
 
-// Fetch data without changing React state.
 async function fetchRecurringData(userId) {
   const { error: syncError } = await supabase.rpc(
     'sync_recurring_payments'
@@ -79,6 +83,7 @@ export default function RecurringTransactions() {
 
   const [rules, setRules] = useState([])
   const [payments, setPayments] = useState([])
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [updatingPayment, setUpdatingPayment] = useState(null)
@@ -86,19 +91,33 @@ export default function RecurringTransactions() {
 
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
+
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [form, setForm] = useState(initialForm)
 
-  // Initial data loading.
-  useEffect(() => {
-    if (!user?.id) return
+  const ruleById = useMemo(
+    () => Object.fromEntries(rules.map((rule) => [rule.id, rule])),
+    [rules]
+  )
 
+  // Fetch recurring rules and payment history.
+  useEffect(() => {
     let cancelled = false
 
-    const loadData = async () => {
+    async function loadData() {
+      if (!user?.id) {
+        setRules([])
+        setPayments([])
+        setLoading(false)
+        return
+      }
+
+      setLoading(true)
+
       try {
         const data = await fetchRecurringData(user.id)
 
@@ -112,9 +131,7 @@ export default function RecurringTransactions() {
           setError(err.message || 'Could not load recurring payment data.')
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
+        if (!cancelled) setLoading(false)
       }
     }
 
@@ -125,9 +142,9 @@ export default function RecurringTransactions() {
     }
   }, [user?.id])
 
-  // Refresh data after user actions.
+  // Refresh recurring rules and payments.
   const refreshData = async (showSyncMessage = false) => {
-    if (!user?.id) return
+    if (!user?.id) return false
 
     setSyncing(true)
 
@@ -141,30 +158,41 @@ export default function RecurringTransactions() {
       if (showSyncMessage) {
         setSuccess('Payment records refreshed successfully.')
       }
+
+      return true
     } catch (err) {
-      setError(err.message || 'Could not load recurring payment data.')
+      setError(err.message || 'Could not refresh recurring payments.')
+      return false
     } finally {
       setLoading(false)
       setSyncing(false)
     }
   }
 
+  // Update form fields.
+  // Switching to income automatically clears the end date.
   const updateField = (event) => {
     const { name, value } = event.target
 
     setForm((previous) => ({
       ...previous,
       [name]: value,
+      ...(name === 'type' && value === 'income'
+        ? { end_date: '' }
+        : {}),
     }))
   }
 
+  // Open create modal.
   const openCreateModal = () => {
     setEditingId(null)
     setForm({ ...initialForm, start_date: today() })
     setError('')
+    setSuccess('')
     setModalOpen(true)
   }
 
+  // Open edit modal.
   const openEditModal = (rule) => {
     setEditingId(rule.id)
 
@@ -176,10 +204,11 @@ export default function RecurringTransactions() {
       description: rule.description || '',
       frequency: rule.frequency,
       start_date: rule.start_date,
-      end_date: rule.end_date || '',
+      end_date: rule.type === 'expense' ? rule.end_date || '' : '',
     })
 
     setError('')
+    setSuccess('')
     setModalOpen(true)
   }
 
@@ -191,6 +220,7 @@ export default function RecurringTransactions() {
     setError('')
   }
 
+  // Create or update recurring rule.
   const handleSubmit = async (event) => {
     event.preventDefault()
 
@@ -204,12 +234,20 @@ export default function RecurringTransactions() {
       return
     }
 
-    if (!Number.isFinite(Number(form.amount)) || Number(form.amount) <= 0) {
+    if (
+      !Number.isFinite(Number(form.amount)) ||
+      Number(form.amount) <= 0
+    ) {
       setError('Enter a valid amount greater than zero.')
       return
     }
 
-    if (form.end_date && form.end_date < form.start_date) {
+    // End-date validation applies only to expenses.
+    if (
+      form.type === 'expense' &&
+      form.end_date &&
+      form.end_date < form.start_date
+    ) {
       setError('End date cannot be before start date.')
       return
     }
@@ -218,6 +256,8 @@ export default function RecurringTransactions() {
     setError('')
     setSuccess('')
 
+    // Income always has NULL end_date.
+    // Expenses retain their optional end date.
     const payload = {
       title: form.title.trim(),
       amount: Number(form.amount),
@@ -226,7 +266,10 @@ export default function RecurringTransactions() {
       description: form.description.trim() || null,
       frequency: form.frequency,
       start_date: form.start_date,
-      end_date: form.end_date || null,
+      end_date:
+        form.type === 'income'
+          ? null
+          : form.end_date || null,
     }
 
     try {
@@ -266,43 +309,58 @@ export default function RecurringTransactions() {
     }
   }
 
-  // Mark an individual billing cycle as paid or pending.
+  // Mark income as received or expense as paid.
   const togglePayment = async (payment) => {
-    if (!user?.id) return
+    if (!user?.id || updatingPayment) return
+
+    const rule = ruleById[payment.recurring_transaction_id]
+    const isIncome = rule?.type === 'income'
+    const isPaid = payment.payment_status === 'paid'
 
     setUpdatingPayment(payment.id)
     setError('')
     setSuccess('')
 
-    const isPaid = payment.payment_status === 'paid'
-
     try {
-      const { error: updateError } = await supabase
-        .from('recurring_transaction_payments')
-        .update({
-          payment_status: isPaid ? 'pending' : 'paid',
-          paid_at: isPaid ? null : new Date().toISOString(),
-        })
-        .eq('id', payment.id)
-        .eq('user_id', user.id)
-
-      if (updateError) throw updateError
-
-      await refreshData()
-
-      setSuccess(
-        isPaid
-          ? 'Payment changed back to pending.'
-          : 'Payment marked as paid!'
+      const { error: rpcError } = await supabase.rpc(
+        'set_recurring_payment_status',
+        {
+          p_payment_id: payment.id,
+          p_mark_paid: !isPaid,
+        }
       )
+
+      if (rpcError) throw rpcError
+
+      const refreshed = await refreshData()
+
+      if (refreshed) {
+        if (isPaid) {
+          setSuccess(
+            isIncome
+              ? 'Income changed back to pending. Linked transaction removed.'
+              : 'Payment changed back to pending. Linked transaction removed.'
+          )
+        } else {
+          setSuccess(
+            isIncome
+              ? 'Income marked as received! Transaction added successfully.'
+              : 'Payment marked as paid! Transaction added successfully.'
+          )
+        }
+      }
     } catch (err) {
-      setError(err.message || 'Could not update payment.')
+      console.error('Recurring payment update failed:', err)
+      setError(err.message || 'Could not update payment. Please try again.')
     } finally {
       setUpdatingPayment(null)
     }
   }
 
+  // Pause or resume a recurring rule.
   const toggleStatus = async (rule) => {
+    if (!user?.id) return
+
     setError('')
     setSuccess('')
 
@@ -326,10 +384,15 @@ export default function RecurringTransactions() {
     )
   }
 
+  // Delete a recurring rule.
   const deleteRule = async (id) => {
-    if (!window.confirm(
-      'Delete this recurring transaction and its payment history?'
-    )) {
+    if (!user?.id) return
+
+    if (
+      !window.confirm(
+        'Delete this recurring transaction and its payment history?'
+      )
+    ) {
       return
     }
 
@@ -351,19 +414,92 @@ export default function RecurringTransactions() {
     setSuccess('Recurring transaction deleted.')
   }
 
-  // Find the latest payment record for each recurring rule.
-  const latestPaymentByRule = {}
+  // Find the latest payment for every recurring rule.
+  const latestPaymentByRule = useMemo(() => {
+    const latest = {}
 
-  payments.forEach((payment) => {
-    const existing =
-      latestPaymentByRule[payment.recurring_transaction_id]
+    payments.forEach((payment) => {
+      const existing = latest[payment.recurring_transaction_id]
 
-    if (!existing || payment.due_date > existing.due_date) {
-      latestPaymentByRule[payment.recurring_transaction_id] = payment
-    }
-  })
+      if (!existing || payment.due_date > existing.due_date) {
+        latest[payment.recurring_transaction_id] = payment
+      }
+    })
 
-  const activeRules = rules.filter((rule) => rule.is_active)
+    return latest
+  }, [payments])
+
+  // --------------------------------------------------
+  // RECURRING TOTALS
+  // --------------------------------------------------
+
+  const currentDate = today()
+
+  // Include active rules that have started and have not expired.
+  // Income has no end date, so it will not expire automatically.
+  const activeRules = useMemo(
+    () =>
+      rules.filter((rule) => {
+        const hasStarted =
+          !rule.start_date || rule.start_date <= currentDate
+
+        const hasNotExpired =
+          rule.type === 'income' ||
+          !rule.end_date ||
+          rule.end_date >= currentDate
+
+        return (
+          rule.is_active === true &&
+          hasStarted &&
+          hasNotExpired
+        )
+      }),
+    [rules, currentDate]
+  )
+
+  // Total active recurring income.
+  const totalRecurringIncome = useMemo(
+    () =>
+      activeRules
+        .filter((rule) => rule.type === 'income')
+        .reduce(
+          (total, rule) => total + Number(rule.amount || 0),
+          0
+        ),
+    [activeRules]
+  )
+
+  // Total active recurring expenses.
+  const totalRecurringExpenses = useMemo(
+    () =>
+      activeRules
+        .filter((rule) => rule.type === 'expense')
+        .reduce(
+          (total, rule) => total + Number(rule.amount || 0),
+          0
+        ),
+    [activeRules]
+  )
+
+  // Separate monthly expenses total.
+  const monthlyExpenses = useMemo(
+    () =>
+      activeRules
+        .filter(
+          (rule) =>
+            rule.type === 'expense' &&
+            rule.frequency === 'monthly'
+        )
+        .reduce(
+          (total, rule) => total + Number(rule.amount || 0),
+          0
+        ),
+    [activeRules]
+  )
+
+  // --------------------------------------------------
+  // PAYMENT SUMMARY
+  // --------------------------------------------------
 
   const pendingPayments = payments.filter(
     (payment) => payment.payment_status === 'pending'
@@ -373,37 +509,18 @@ export default function RecurringTransactions() {
     (payment) => payment.payment_status === 'paid'
   )
 
-  const monthlyExpenses = activeRules
-    .filter(
-      (rule) =>
-        rule.type === 'expense' && rule.frequency === 'monthly'
-    )
-    .reduce((total, rule) => total + Number(rule.amount), 0)
-
-  const monthlyIncome = activeRules
-    .filter(
-      (rule) =>
-        rule.type === 'income' && rule.frequency === 'monthly'
-    )
-    .reduce((total, rule) => total + Number(rule.amount), 0)
-
-  const ruleById = Object.fromEntries(
-    rules.map((rule) => [rule.id, rule])
-  )
-
+  // Search and filter recurring rules.
   const filteredRules = rules.filter((rule) => {
     const matchesSearch =
-      rule.title.toLowerCase().includes(search.toLowerCase()) ||
-      rule.category.toLowerCase().includes(search.toLowerCase())
+      (rule.title || '').toLowerCase().includes(search.toLowerCase()) ||
+      (rule.category || '').toLowerCase().includes(search.toLowerCase())
 
     const latestPayment = latestPaymentByRule[rule.id]
 
     const matchesFilter =
       filter === 'all' ||
-      (filter === 'pending' &&
-        latestPayment?.payment_status === 'pending') ||
-      (filter === 'paid' &&
-        latestPayment?.payment_status === 'paid') ||
+      (filter === 'pending' && latestPayment?.payment_status === 'pending') ||
+      (filter === 'paid' && latestPayment?.payment_status === 'paid') ||
       (filter === 'paused' && !rule.is_active)
 
     return matchesSearch && matchesFilter
@@ -414,44 +531,41 @@ export default function RecurringTransactions() {
   )
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-7">
+    <div className="min-h-screen bg-[#f6f7fb] px-3 py-5 text-slate-900 sm:px-5 lg:px-7">
+      <div className="mx-auto max-w-7xl space-y-5">
 
         {/* Header */}
-        <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+        <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-indigo-600">
-              <Repeat size={17} />
+            <div className="mb-1.5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-indigo-600">
+              <Repeat size={15} />
               Financial Management
             </div>
 
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">
               Recurring Transactions
             </h1>
 
-            <p className="mt-2 text-sm text-slate-500">
-              Manage regular bills, subscriptions and recurring income.
+            <p className="mt-1 text-sm text-slate-500">
+              Keep track of regular bills, subscriptions and income.
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex gap-2">
             <button
               onClick={() => refreshData(true)}
               disabled={syncing}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-60 sm:flex-none"
             >
-              <RefreshCw
-                size={17}
-                className={syncing ? 'animate-spin' : ''}
-              />
-              Refresh Payments
+              <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
+              Refresh
             </button>
 
             <button
               onClick={openCreateModal}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition hover:bg-indigo-700 sm:flex-none"
             >
-              <Plus size={19} />
+              <Plus size={17} />
               Add Recurring
             </button>
           </div>
@@ -459,154 +573,177 @@ export default function RecurringTransactions() {
 
         {/* Alerts */}
         {error && (
-          <div className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            <span>{error}</span>
-            <button onClick={() => setError('')} aria-label="Dismiss error">
-              <X size={17} />
-            </button>
-          </div>
+          <Alert
+            type="error"
+            message={error}
+            onClose={() => setError('')}
+          />
         )}
 
         {success && (
-          <div className="flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            <span>{success}</span>
-            <button onClick={() => setSuccess('')} aria-label="Dismiss message">
-              <X size={17} />
-            </button>
-          </div>
+          <Alert
+            type="success"
+            message={success}
+            onClose={() => setSuccess('')}
+          />
         )}
 
-        {/* Summary */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <SummaryCard
             title="Total Rules"
             value={rules.length}
-            icon={<Repeat size={21} />}
+            icon={<Repeat size={18} />}
             color="indigo"
           />
 
           <SummaryCard
-            title="Pending Payments"
+            title="Pending"
             value={pendingPayments.length}
-            icon={<Clock3 size={21} />}
+            icon={<Clock3 size={18} />}
             color="amber"
           />
 
           <SummaryCard
-            title="Completed Payments"
+            title="Completed"
             value={paidPayments.length}
-            icon={<CheckCircle2 size={21} />}
+            icon={<CheckCircle2 size={18} />}
             color="emerald"
           />
 
           <SummaryCard
             title="Monthly Expenses"
             value={currency(monthlyExpenses)}
-            icon={<TrendingDown size={21} />}
+            icon={<TrendingDown size={18} />}
             color="rose"
           />
         </div>
 
-        {/* Income and expenses */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="flex items-center gap-4 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
-            <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600">
-              <TrendingUp size={23} />
-            </div>
+        {/* Income and Expense Overview */}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+
+          {/* Recurring Income Card */}
+          <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
             <div>
-              <p className="text-sm text-slate-500">
-                Monthly Recurring Income
+              <p className="text-xs font-medium text-slate-500">
+                Active Recurring Income
               </p>
-              <p className="mt-1 text-xl font-bold">
-                {currency(monthlyIncome)}
+
+              <p className="mt-1 text-xl font-bold tracking-tight text-emerald-600">
+                {currency(totalRecurringIncome)}
               </p>
+
+              <p className="mt-1 text-[11px] text-slate-400">
+                Total of all active income rules
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600">
+              <ArrowUpRight size={21} />
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-2xl border border-rose-100 bg-white p-5 shadow-sm">
-            <div className="rounded-xl bg-rose-50 p-3 text-rose-600">
-              <Wallet size={23} />
-            </div>
+          {/* Recurring Expense Card */}
+          <div className="flex items-center justify-between rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
             <div>
-              <p className="text-sm text-slate-500">
-                Monthly Recurring Expenses
+              <p className="text-xs font-medium text-slate-500">
+                Active Recurring Expenses
               </p>
-              <p className="mt-1 text-xl font-bold">
-                {currency(monthlyExpenses)}
+
+              <p className="mt-1 text-xl font-bold tracking-tight text-rose-600">
+                {currency(totalRecurringExpenses)}
               </p>
+
+              <p className="mt-1 text-[11px] text-slate-400">
+                Total of all active expense rules
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-rose-50 p-2.5 text-rose-600">
+              <ArrowDownRight size={21} />
             </div>
           </div>
         </div>
 
-        {/* Upcoming payments */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="rounded-xl bg-indigo-50 p-2.5 text-indigo-600">
-              <CalendarDays size={21} />
-            </div>
-            <div>
-              <h2 className="font-bold">Upcoming &amp; Pending Payments</h2>
-              <p className="text-xs text-slate-500">
-                Individual billing cycles that need attention
-              </p>
-            </div>
-          </div>
+        {/* Upcoming and Pending */}
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+          <SectionHeading
+            icon={<CalendarDays size={19} />}
+            title="Upcoming & Pending"
+            subtitle="Billing cycles waiting for confirmation"
+            color="indigo"
+          />
 
           {loading ? (
-            <p className="py-8 text-center text-sm text-slate-500">
-              Loading payments...
-            </p>
+            <LoadingState text="Loading payments..." />
           ) : sortedPendingPayments.length === 0 ? (
-            <div className="rounded-xl bg-slate-50 py-8 text-center">
-              <CheckCircle2
-                className="mx-auto mb-2 text-emerald-500"
-                size={30}
-              />
-              <p className="font-medium text-slate-700">
-                You're all caught up!
-              </p>
-              <p className="mt-1 text-sm text-slate-500">
-                No pending payment cycles found.
-              </p>
-            </div>
+            <EmptyState
+              icon={<CheckCircle2 size={27} />}
+              title="You're all caught up!"
+              description="No pending payment cycles found."
+            />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {sortedPendingPayments.slice(0, 5).map((payment) => {
                 const rule = ruleById[payment.recurring_transaction_id]
+                const isIncome = rule?.type === 'income'
 
                 return (
                   <div
                     key={payment.id}
-                    className="flex flex-col justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 sm:flex-row sm:items-center"
+                    className="flex flex-col justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 transition hover:border-slate-200 sm:flex-row sm:items-center"
                   >
-                    <div>
-                      <p className="font-semibold">
-                        {rule?.title || 'Recurring payment'}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {rule?.category || 'Payment'} · Due{' '}
-                        {dateFormat(payment.due_date)}
-                      </p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                          isIncome
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : 'bg-rose-50 text-rose-600'
+                        }`}
+                      >
+                        {isIncome ? (
+                          <TrendingUp size={18} />
+                        ) : (
+                          <TrendingDown size={18} />
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-800">
+                          {rule?.title || 'Recurring transaction'}
+                        </p>
+
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {rule?.category || 'Transaction'} · Due {dateFormat(payment.due_date)}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-4 sm:justify-end">
+                    <div className="flex items-center justify-between gap-3 sm:justify-end">
                       <div className="sm:text-right">
-                        <p className="font-bold">
-                          {currency(payment.amount)}
+                        <p className="text-sm font-bold text-slate-900">
+                          {isIncome ? '+' : '-'}{currency(payment.amount)}
                         </p>
-                        <span className="text-xs font-medium text-amber-600">
+
+                        <span className="text-[11px] font-semibold text-amber-600">
                           Pending
                         </span>
                       </div>
 
                       <button
                         onClick={() => togglePayment(payment)}
-                        disabled={updatingPayment === payment.id}
-                        className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                        disabled={updatingPayment !== null}
+                        className={`min-w-[125px] rounded-lg px-3 py-2 text-xs font-bold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                          isIncome
+                            ? 'bg-emerald-600 hover:bg-emerald-700'
+                            : 'bg-indigo-600 hover:bg-indigo-700'
+                        }`}
                       >
                         {updatingPayment === payment.id
                           ? 'Updating...'
-                          : 'Mark Paid'}
+                          : isIncome
+                            ? 'Mark Received'
+                            : 'Mark as Paid'}
                       </button>
                     </div>
                   </div>
@@ -616,89 +753,105 @@ export default function RecurringTransactions() {
           )}
         </section>
 
-        {/* Payment history */}
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center gap-3 border-b border-slate-100 p-5 sm:p-6">
-            <div className="rounded-xl bg-violet-50 p-2.5 text-violet-600">
-              <History size={21} />
-            </div>
-            <div>
-              <h2 className="font-bold">Payment History</h2>
-              <p className="text-xs text-slate-500">
-                Every billing cycle is tracked separately
-              </p>
-            </div>
+        {/* Payment History */}
+        <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+          <div className="border-b border-slate-100 px-4 py-4 sm:px-5">
+            <SectionHeading
+              icon={<History size={19} />}
+              title="Payment History"
+              subtitle="A record of every recurring billing cycle"
+              color="violet"
+            />
           </div>
 
           {loading ? (
-            <p className="py-10 text-center text-sm text-slate-500">
-              Loading history...
-            </p>
+            <LoadingState text="Loading history..." />
           ) : payments.length === 0 ? (
-            <div className="py-12 text-center">
-              <History className="mx-auto mb-2 text-slate-300" size={30} />
-              <p className="font-medium text-slate-700">
-                No payment history yet
-              </p>
-              <p className="mt-1 text-sm text-slate-500">
-                Payment records will appear here when billing cycles become due.
-              </p>
-            </div>
+            <EmptyState
+              icon={<History size={27} />}
+              title="No payment history yet"
+              description="Your billing cycles will appear here."
+            />
           ) : (
             <div className="divide-y divide-slate-100">
               {payments.map((payment) => {
                 const rule = ruleById[payment.recurring_transaction_id]
                 const isPaid = payment.payment_status === 'paid'
+                const isIncome = rule?.type === 'income'
 
                 return (
                   <div
                     key={payment.id}
-                    className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center sm:px-6"
+                    className="flex flex-col justify-between gap-3 px-4 py-3.5 transition hover:bg-slate-50/70 sm:flex-row sm:items-center sm:px-5"
                   >
-                    <div className="min-w-0">
-                      <p className="break-words font-semibold text-slate-900">
-                        {rule?.title || 'Recurring payment'}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {rule?.category || 'Payment'} · Due{' '}
-                        {dateFormat(payment.due_date)}
-                      </p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                          isIncome
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : 'bg-rose-50 text-rose-600'
+                        }`}
+                      >
+                        {isIncome ? (
+                          <TrendingUp size={17} />
+                        ) : (
+                          <TrendingDown size={17} />
+                        )}
+                      </div>
 
-                      {isPaid && payment.paid_at && (
-                        <p className="mt-1 text-xs text-slate-400">
-                          Paid on{' '}
-                          {new Date(payment.paid_at).toLocaleDateString('en-IN')}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-800">
+                          {rule?.title || 'Recurring transaction'}
                         </p>
-                      )}
+
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {rule?.category || 'Transaction'} · {dateFormat(payment.due_date)}
+                        </p>
+
+                        {isPaid && payment.paid_at && (
+                          <p className="mt-0.5 text-[11px] text-slate-400">
+                            {isIncome ? 'Received' : 'Paid'} on{' '}
+                            {new Date(payment.paid_at).toLocaleDateString('en-IN')}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between gap-3 sm:justify-end">
-                      <p className="font-bold">
-                        {currency(payment.amount)}
+                      <p className={`text-sm font-bold ${isIncome ? 'text-emerald-600' : 'text-slate-900'}`}>
+                        {isIncome ? '+' : '-'}{currency(payment.amount)}
                       </p>
 
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        className={`min-w-[75px] rounded-full px-2.5 py-1 text-center text-[11px] font-bold ${
                           isPaid
                             ? 'bg-emerald-50 text-emerald-700'
                             : 'bg-amber-50 text-amber-700'
                         }`}
                       >
-                        {isPaid ? 'Paid' : 'Pending'}
+                        {isPaid
+                          ? isIncome
+                            ? 'Received'
+                            : 'Paid'
+                          : 'Pending'}
                       </span>
 
                       <button
                         onClick={() => togglePayment(payment)}
-                        disabled={updatingPayment === payment.id}
-                        title={isPaid ? 'Undo payment' : 'Mark as paid'}
-                        className="rounded-lg border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 disabled:opacity-50"
+                        disabled={updatingPayment !== null}
+                        title={
+                          isPaid
+                            ? isIncome ? 'Undo received' : 'Undo paid'
+                            : isIncome ? 'Mark received' : 'Mark paid'
+                        }
+                        className="rounded-lg border border-slate-200 p-2 text-slate-500 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50"
                       >
                         {updatingPayment === payment.id ? (
-                          <RefreshCw size={16} className="animate-spin" />
+                          <RefreshCw size={15} className="animate-spin" />
                         ) : isPaid ? (
-                          <Clock3 size={16} />
+                          <Clock3 size={15} />
                         ) : (
-                          <Check size={16} />
+                          <Check size={15} />
                         )}
                       </button>
                     </div>
@@ -709,41 +862,43 @@ export default function RecurringTransactions() {
           )}
         </section>
 
-        {/* All recurring rules */}
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 p-5 sm:p-6">
-            <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+        {/* All Recurring Rules */}
+        <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+          <div className="border-b border-slate-100 p-4 sm:p-5">
+            <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
               <div>
-                <h2 className="text-lg font-bold">
+                <h2 className="text-base font-bold text-slate-900">
                   All Recurring Transactions
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
+
+                <p className="mt-1 text-xs text-slate-500">
                   Manage your recurring rules and schedules.
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <div className="relative">
                   <Search
-                    size={17}
+                    size={15}
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   />
+
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search transactions..."
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-indigo-400 focus:bg-white sm:w-56"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs outline-none transition focus:border-indigo-400 focus:bg-white sm:w-52"
                   />
                 </div>
 
                 <select
                   value={filter}
                   onChange={(event) => setFilter(event.target.value)}
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-indigo-400"
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:border-indigo-400"
                 >
                   <option value="all">All transactions</option>
                   <option value="pending">Latest cycle pending</option>
-                  <option value="paid">Latest cycle paid</option>
+                  <option value="paid">Latest cycle completed</option>
                   <option value="paused">Paused</option>
                 </select>
               </div>
@@ -751,52 +906,47 @@ export default function RecurringTransactions() {
           </div>
 
           {loading ? (
-            <div className="py-16 text-center text-sm text-slate-500">
-              Loading recurring transactions...
-            </div>
+            <LoadingState text="Loading recurring transactions..." />
           ) : filteredRules.length === 0 ? (
-            <div className="px-5 py-16 text-center">
-              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-500">
-                <Repeat size={27} />
-              </div>
-              <h3 className="font-semibold text-slate-800">
-                No transactions found
-              </h3>
-              <p className="mt-1 text-sm text-slate-500">
-                Add a recurring rule or change your search filter.
-              </p>
-            </div>
+            <EmptyState
+              icon={<Repeat size={27} />}
+              title="No transactions found"
+              description="Add a recurring rule or change your search filter."
+            />
           ) : (
             <div className="divide-y divide-slate-100">
               {filteredRules.map((rule) => {
                 const latestPayment = latestPaymentByRule[rule.id]
+                const isIncome = rule.type === 'income'
 
                 return (
                   <div
                     key={rule.id}
-                    className="flex flex-col justify-between gap-4 p-5 transition hover:bg-slate-50/70 lg:flex-row lg:items-center"
+                    className="flex flex-col justify-between gap-3 p-4 transition hover:bg-slate-50/60 sm:flex-row sm:items-center sm:px-5"
                   >
                     <div className="flex min-w-0 items-start gap-3">
                       <div
-                        className={`rounded-xl p-3 ${
-                          rule.type === 'income'
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                          isIncome
                             ? 'bg-emerald-50 text-emerald-600'
                             : 'bg-rose-50 text-rose-600'
                         }`}
                       >
-                        {rule.type === 'income'
-                          ? <TrendingUp size={21} />
-                          : <TrendingDown size={21} />}
+                        {isIncome ? (
+                          <TrendingUp size={19} />
+                        ) : (
+                          <TrendingDown size={19} />
+                        )}
                       </div>
 
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="break-words font-semibold">
+                          <h3 className="break-words text-sm font-bold text-slate-800">
                             {rule.title}
                           </h3>
 
                           <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                               latestPayment?.payment_status === 'paid'
                                 ? 'bg-emerald-50 text-emerald-700'
                                 : latestPayment?.payment_status === 'pending'
@@ -806,23 +956,23 @@ export default function RecurringTransactions() {
                           >
                             {latestPayment
                               ? latestPayment.payment_status === 'paid'
-                                ? 'Latest cycle paid'
-                                : 'Latest cycle pending'
+                                ? isIncome ? 'Received' : 'Paid'
+                                : 'Pending'
                               : 'No payment yet'}
                           </span>
 
                           {!rule.is_active && (
-                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
                               Paused
                             </span>
                           )}
                         </div>
 
-                        <p className="mt-1 text-sm text-slate-500">
+                        <p className="mt-1 text-xs text-slate-500">
                           {rule.category} · {rule.frequency}
                         </p>
 
-                        <p className="mt-1 text-xs text-slate-400">
+                        <p className="mt-1 text-[11px] text-slate-400">
                           Next due: {dateFormat(rule.next_due_date)}
                         </p>
 
@@ -834,44 +984,37 @@ export default function RecurringTransactions() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between gap-3 lg:justify-end">
-                      <p
-                        className={`font-bold ${
-                          rule.type === 'income'
-                            ? 'text-emerald-600'
-                            : 'text-slate-900'
-                        }`}
-                      >
-                        {rule.type === 'income' ? '+' : '-'}
-                        {currency(rule.amount)}
+                    <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
+                      <p className={`text-sm font-bold ${isIncome ? 'text-emerald-600' : 'text-slate-900'}`}>
+                        {isIncome ? '+' : '-'}{currency(rule.amount)}
                       </p>
 
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          onClick={() => openEditModal(rule)}
+                      <div className="flex items-center gap-1.5">
+                        <ActionButton
                           title="Edit"
-                          className="rounded-lg border border-slate-200 p-2 text-slate-500 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                          onClick={() => openEditModal(rule)}
                         >
-                          <Pencil size={16} />
-                        </button>
+                          <Pencil size={15} />
+                        </ActionButton>
 
-                        <button
-                          onClick={() => toggleStatus(rule)}
+                        <ActionButton
                           title={rule.is_active ? 'Pause' : 'Resume'}
-                          className="rounded-lg border border-slate-200 p-2 text-slate-500 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-600"
+                          onClick={() => toggleStatus(rule)}
                         >
-                          {rule.is_active
-                            ? <Pause size={16} />
-                            : <Play size={16} />}
-                        </button>
+                          {rule.is_active ? (
+                            <Pause size={15} />
+                          ) : (
+                            <Play size={15} />
+                          )}
+                        </ActionButton>
 
-                        <button
-                          onClick={() => deleteRule(rule.id)}
+                        <ActionButton
                           title="Delete"
-                          className="rounded-lg border border-slate-200 p-2 text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                          danger
+                          onClick={() => deleteRule(rule.id)}
                         >
-                          <Trash2 size={16} />
-                        </button>
+                          <Trash2 size={15} />
+                        </ActionButton>
                       </div>
                     </div>
                   </div>
@@ -883,30 +1026,33 @@ export default function RecurringTransactions() {
 
         {/* Create / Edit Modal */}
         {modalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/40 p-4 backdrop-blur-sm">
-            <div className="my-auto w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl sm:p-7">
-              <div className="mb-6 flex items-center justify-between">
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/40 p-3 backdrop-blur-[3px]">
+            <div className="my-auto w-full max-w-lg overflow-hidden rounded-2xl border border-white/60 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
                 <div>
-                  <h2 className="text-xl font-bold">
+                  <h2 className="text-lg font-bold text-slate-900">
                     {editingId ? 'Edit Recurring Rule' : 'New Recurring Rule'}
                   </h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Enter the details of your regular transaction.
+
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Set up your regular income or expense.
                   </p>
                 </div>
 
                 <button
+                  type="button"
                   onClick={closeModal}
                   disabled={saving}
                   className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                 >
-                  <X size={21} />
+                  <X size={19} />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-3.5 p-5 sm:px-6 sm:py-5">
                 <div>
                   <label className="form-label">Transaction Title</label>
+
                   <input
                     name="title"
                     value={form.title}
@@ -917,9 +1063,10 @@ export default function RecurringTransactions() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="form-label">Amount (₹)</label>
+
                     <input
                       name="amount"
                       type="number"
@@ -935,6 +1082,7 @@ export default function RecurringTransactions() {
 
                   <div>
                     <label className="form-label">Transaction Type</label>
+
                     <select
                       name="type"
                       value={form.type}
@@ -949,6 +1097,7 @@ export default function RecurringTransactions() {
 
                 <div>
                   <label className="form-label">Category</label>
+
                   <input
                     name="category"
                     value={form.category}
@@ -961,6 +1110,7 @@ export default function RecurringTransactions() {
 
                 <div>
                   <label className="form-label">Frequency</label>
+
                   <select
                     name="frequency"
                     value={form.frequency}
@@ -974,9 +1124,10 @@ export default function RecurringTransactions() {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className={form.type === 'expense' ? 'grid grid-cols-2 gap-3' : ''}>
                   <div>
                     <label className="form-label">Start Date</label>
+
                     <input
                       name="start_date"
                       type="date"
@@ -987,43 +1138,54 @@ export default function RecurringTransactions() {
                     />
                   </div>
 
-                  <div>
-                    <label className="form-label">End Date (Optional)</label>
-                    <input
-                      name="end_date"
-                      type="date"
-                      min={form.start_date}
-                      value={form.end_date}
-                      onChange={updateField}
-                      className="form-input"
-                    />
-                  </div>
+                  {/* End Date is only available for expenses. */}
+                  {form.type === 'expense' && (
+                    <div>
+                      <label className="form-label">End Date (Optional)</label>
+
+                      <input
+                        name="end_date"
+                        type="date"
+                        min={form.start_date}
+                        value={form.end_date}
+                        onChange={updateField}
+                        className="form-input"
+                      />
+                    </div>
+                  )}
                 </div>
+
+                {form.type === 'income' && (
+                  <p className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                    Income will continue without an end date. You can pause it whenever you want.
+                  </p>
+                )}
 
                 <div>
                   <label className="form-label">Description (Optional)</label>
+
                   <textarea
                     name="description"
                     value={form.description}
                     onChange={updateField}
                     placeholder="Add a note..."
-                    rows={3}
+                    rows={2}
                     className="form-input resize-none"
                   />
                 </div>
 
                 {error && (
-                  <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                  <p className="rounded-lg border border-red-100 bg-red-50 p-2.5 text-xs text-red-600">
                     {error}
                   </p>
                 )}
 
-                <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
+                <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row">
                   <button
                     type="button"
                     onClick={closeModal}
                     disabled={saving}
-                    className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                    className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
                   >
                     Cancel
                   </button>
@@ -1031,7 +1193,7 @@ export default function RecurringTransactions() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="flex-1 rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
+                    className="flex-1 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60"
                   >
                     {saving
                       ? 'Saving...'
@@ -1049,10 +1211,10 @@ export default function RecurringTransactions() {
       <style>{`
         .form-label {
           display: block;
-          margin-bottom: 7px;
+          margin-bottom: 6px;
           color: #475569;
-          font-size: 13px;
-          font-weight: 600;
+          font-size: 12px;
+          font-weight: 650;
         }
 
         .form-input {
@@ -1060,11 +1222,11 @@ export default function RecurringTransactions() {
           border: 1px solid #e2e8f0;
           border-radius: 10px;
           background: #f8fafc;
-          padding: 11px 12px;
+          padding: 10px 11px;
           color: #0f172a;
           outline: none;
-          font-size: 14px;
-          transition: border-color 150ms, box-shadow 150ms;
+          font-size: 13px;
+          transition: border-color 150ms, box-shadow 150ms, background 150ms;
         }
 
         .form-input:focus {
@@ -1082,6 +1244,7 @@ export default function RecurringTransactions() {
   )
 }
 
+// Summary Card Component
 function SummaryCard({ title, value, icon, color }) {
   const colors = {
     indigo: 'bg-indigo-50 text-indigo-600',
@@ -1091,17 +1254,102 @@ function SummaryCard({ title, value, icon, color }) {
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-slate-500">{title}</p>
-        <div className={`rounded-xl p-2.5 ${colors[color]}`}>
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-slate-500">{title}</p>
+
+        <div className={`rounded-xl p-2 ${colors[color]}`}>
           {icon}
         </div>
       </div>
 
-      <p className="mt-4 break-words text-2xl font-bold text-slate-900">
+      <p className="mt-3 break-words text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
         {value}
       </p>
     </div>
+  )
+}
+
+// Alert Component
+function Alert({ type, message, onClose }) {
+  const styles = type === 'error'
+    ? 'border-red-200 bg-red-50 text-red-700'
+    : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+
+  return (
+    <div className={`flex items-start justify-between gap-3 rounded-xl border px-3.5 py-3 text-xs font-medium ${styles}`}>
+      <span className="break-words">{message}</span>
+
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Dismiss message"
+      >
+        <X size={15} />
+      </button>
+    </div>
+  )
+}
+
+// Section Heading Component
+function SectionHeading({ icon, title, subtitle, color }) {
+  const colors = {
+    indigo: 'bg-indigo-50 text-indigo-600',
+    violet: 'bg-violet-50 text-violet-600',
+  }
+
+  return (
+    <div className="mb-4 flex items-center gap-3">
+      <div className={`rounded-xl p-2.5 ${colors[color]}`}>
+        {icon}
+      </div>
+
+      <div>
+        <h2 className="text-sm font-bold text-slate-900">{title}</h2>
+        <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>
+      </div>
+    </div>
+  )
+}
+
+// Loading Component
+function LoadingState({ text }) {
+  return (
+    <div className="py-9 text-center text-xs text-slate-500">
+      <RefreshCw size={18} className="mx-auto mb-2 animate-spin text-indigo-500" />
+      {text}
+    </div>
+  )
+}
+
+// Empty State Component
+function EmptyState({ icon, title, description }) {
+  return (
+    <div className="rounded-xl bg-slate-50/80 px-4 py-8 text-center">
+      <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm">
+        {icon}
+      </div>
+
+      <p className="text-sm font-semibold text-slate-700">{title}</p>
+      <p className="mt-1 text-xs text-slate-500">{description}</p>
+    </div>
+  )
+}
+
+// Action Button Component
+function ActionButton({ children, title, onClick, danger = false }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`rounded-lg border border-slate-200 p-2 transition ${
+        danger
+          ? 'text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600'
+          : 'text-slate-500 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600'
+      }`}
+    >
+      {children}
+    </button>
   )
 }
