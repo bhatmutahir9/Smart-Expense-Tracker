@@ -6,6 +6,7 @@ import {
   TrendingUp,
   TrendingDown,
   Plus,
+  X,
   ArrowUpRight,
   ArrowDownRight,
   ReceiptText,
@@ -42,6 +43,28 @@ const currency = (amount) =>
     currency: 'INR',
     maximumFractionDigits: 0,
   }).format(Number(amount) || 0)
+
+const transactionCategories = [
+  'Food',
+  'Shopping',
+  'Transport',
+  'Bills',
+  'Entertainment',
+  'Health',
+  'Education',
+  'Salary',
+  'Freelance',
+  'Other',
+]
+
+const getInitialTransactionForm = () => ({
+  title: '',
+  amount: '',
+  type: 'expense',
+  category: 'Food',
+  transaction_date: new Date().toISOString().split('T')[0],
+  notes: '',
+})
 
 const formatDate = (value) => {
   if (!value) return 'Date unavailable'
@@ -113,6 +136,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false)
+  const [transactionForm, setTransactionForm] = useState(getInitialTransactionForm)
+  const [savingTransaction, setSavingTransaction] = useState(false)
+  const [transactionModalError, setTransactionModalError] = useState('')
+  const [transactionNotice, setTransactionNotice] = useState('')
 
   const today = new Date()
   const currentYear = today.getFullYear()
@@ -182,6 +210,91 @@ export default function Dashboard() {
       active = false
     }
   }, [user?.id])
+
+  function openTransactionModal() {
+    setTransactionForm(getInitialTransactionForm())
+    setTransactionModalError('')
+    setIsTransactionModalOpen(true)
+  }
+
+  function closeTransactionModal() {
+    if (savingTransaction) return
+    setIsTransactionModalOpen(false)
+    setTransactionModalError('')
+  }
+
+  function handleTransactionFormChange(event) {
+    const { name, value } = event.target
+    setTransactionForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }))
+  }
+
+  async function handleAddTransaction(event) {
+    event.preventDefault()
+
+    if (!user?.id) {
+      setTransactionModalError('Please sign in to add a transaction.')
+      return
+    }
+
+    if (!transactionForm.title.trim()) {
+      setTransactionModalError('Please enter a transaction title.')
+      return
+    }
+
+    const amount = Number(transactionForm.amount)
+    if (!transactionForm.amount || !Number.isFinite(amount) || amount <= 0) {
+      setTransactionModalError('Please enter a valid amount.')
+      return
+    }
+
+    if (!transactionForm.transaction_date) {
+      setTransactionModalError('Please select a transaction date.')
+      return
+    }
+
+    setSavingTransaction(true)
+    setTransactionModalError('')
+
+    const transactionData = {
+      title: transactionForm.title.trim(),
+      amount,
+      type: transactionForm.type,
+      category: transactionForm.category,
+      transaction_date: transactionForm.transaction_date,
+      notes: transactionForm.notes.trim() || null,
+      user_id: user.id,
+    }
+
+    try {
+      const { data, error: insertError } = await supabase
+        .from('transactions')
+        .insert([transactionData])
+        .select()
+        .single()
+
+      if (insertError) throw insertError
+
+      setTransactions((previous) =>
+        [data, ...previous].sort((a, b) =>
+          (b.transaction_date || '').localeCompare(a.transaction_date || ''),
+        ),
+      )
+
+      setIsTransactionModalOpen(false)
+      setTransactionForm(getInitialTransactionForm())
+      setTransactionNotice('Transaction added successfully.')
+      window.setTimeout(() => setTransactionNotice(''), 3500)
+    } catch (err) {
+      setTransactionModalError(
+        err.message || 'Unable to save transaction. Please try again.',
+      )
+    } finally {
+      setSavingTransaction(false)
+    }
+  }
 
   // Refresh dashboard
   async function handleRefresh() {
@@ -419,13 +532,14 @@ export default function Dashboard() {
                   </div>
 
                   <div className="flex flex-wrap gap-3">
-                    <Link
-                      to="/transactions"
+                    <button
+                      type="button"
+                      onClick={openTransactionModal}
                       className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-3 text-xs font-bold text-[#102A43] transition-all duration-200 hover:bg-[#EDF4FB] hover:shadow-md"
                     >
                       <Plus size={16} />
                       Add Transaction
-                    </Link>
+                    </button>
 
                     <Link
                       to="/analytics"
@@ -693,7 +807,7 @@ export default function Dashboard() {
                     icon={BarChart3}
                     title="No financial trends yet"
                     description="Add transactions to build your financial history."
-                    link="/transactions"
+                    onAddTransaction={openTransactionModal}
                     linkText="Add Transaction"
                   />
                 )}
@@ -777,7 +891,7 @@ export default function Dashboard() {
                     icon={CircleDollarSign}
                     title="No spending recorded"
                     description="Your category breakdown will appear here."
-                    link="/transactions"
+                    onAddTransaction={openTransactionModal}
                     linkText="Add Transaction"
                   />
                 )}
@@ -967,7 +1081,7 @@ export default function Dashboard() {
                   icon={ReceiptText}
                   title="No transactions yet"
                   description="Your latest income and expenses will appear here."
-                  link="/transactions"
+                  onAddTransaction={openTransactionModal}
                   linkText="Add Transaction"
                 />
               ) : (
@@ -1055,6 +1169,203 @@ export default function Dashboard() {
           </>
         )}
       </div>
+
+      {transactionNotice && (
+        <div
+          role="status"
+          className="fixed right-4 top-4 z-[70] flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-700 shadow-xl"
+        >
+          <ShieldCheck size={17} />
+          {transactionNotice}
+        </div>
+      )}
+
+      {isTransactionModalOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-[#07182B]/60 p-3 backdrop-blur-sm sm:p-6"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeTransactionModal()
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dashboard-transaction-modal-title"
+            className="my-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-white/70 bg-white shadow-2xl shadow-[#07182B]/25"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-7">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#EDF4FB] text-[#3973B9]">
+                  <CircleDollarSign size={22} />
+                </div>
+                <div>
+                  <h2
+                    id="dashboard-transaction-modal-title"
+                    className="text-lg font-extrabold text-[#102A43] sm:text-xl"
+                  >
+                    Add New Transaction
+                  </h2>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Record income or an expense in your account.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeTransactionModal}
+                disabled={savingTransaction}
+                aria-label="Close transaction form"
+                className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-[#102A43] disabled:opacity-50"
+              >
+                <X size={19} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddTransaction} className="p-5 sm:p-7">
+              {transactionModalError && (
+                <div
+                  role="alert"
+                  className="mb-5 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-xs font-medium text-rose-700"
+                >
+                  {transactionModalError}
+                </div>
+              )}
+
+              <div className="mb-5 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTransactionForm((previous) => ({
+                      ...previous,
+                      type: 'expense',
+                    }))
+                  }
+                  className={`rounded-lg px-3 py-2.5 text-sm font-bold transition ${
+                    transactionForm.type === 'expense'
+                      ? 'bg-white text-rose-600 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <TrendingDown size={16} /> Expense
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTransactionForm((previous) => ({
+                      ...previous,
+                      type: 'income',
+                    }))
+                  }
+                  className={`rounded-lg px-3 py-2.5 text-sm font-bold transition ${
+                    transactionForm.type === 'income'
+                      ? 'bg-white text-emerald-600 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <TrendingUp size={16} /> Income
+                  </span>
+                </button>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-2 block text-xs font-bold text-slate-600">Transaction Title</span>
+                  <input
+                    name="title"
+                    value={transactionForm.title}
+                    onChange={handleTransactionFormChange}
+                    placeholder="e.g. Grocery shopping"
+                    required
+                    maxLength={100}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-[#102A43] outline-none transition placeholder:text-slate-400 focus:border-[#3973B9] focus:bg-white focus:ring-4 focus:ring-[#3973B9]/10"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-xs font-bold text-slate-600">Amount (₹)</span>
+                  <input
+                    type="number"
+                    name="amount"
+                    value={transactionForm.amount}
+                    onChange={handleTransactionFormChange}
+                    placeholder="Enter amount"
+                    min="0.01"
+                    step="0.01"
+                    required
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-[#102A43] outline-none transition placeholder:text-slate-400 focus:border-[#3973B9] focus:bg-white focus:ring-4 focus:ring-[#3973B9]/10"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-xs font-bold text-slate-600">Category</span>
+                  <select
+                    name="category"
+                    value={transactionForm.category}
+                    onChange={handleTransactionFormChange}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-[#102A43] outline-none transition focus:border-[#3973B9] focus:bg-white focus:ring-4 focus:ring-[#3973B9]/10"
+                  >
+                    {transactionCategories.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-xs font-bold text-slate-600">Transaction Date</span>
+                  <input
+                    type="date"
+                    name="transaction_date"
+                    value={transactionForm.transaction_date}
+                    onChange={handleTransactionFormChange}
+                    required
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-[#102A43] outline-none transition focus:border-[#3973B9] focus:bg-white focus:ring-4 focus:ring-[#3973B9]/10"
+                  />
+                </label>
+
+                <label className="block sm:col-span-2">
+                  <span className="mb-2 block text-xs font-bold text-slate-600">
+                    Notes <span className="font-normal text-slate-400">(Optional)</span>
+                  </span>
+                  <input
+                    name="notes"
+                    value={transactionForm.notes}
+                    onChange={handleTransactionFormChange}
+                    placeholder="Add a note..."
+                    maxLength={500}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-[#102A43] outline-none transition placeholder:text-slate-400 focus:border-[#3973B9] focus:bg-white focus:ring-4 focus:ring-[#3973B9]/10"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-7 flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={closeTransactionModal}
+                  disabled={savingTransaction}
+                  className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingTransaction}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#102A43] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#102A43]/15 transition hover:bg-[#173D60] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {savingTransaction ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  ) : (
+                    <Plus size={17} />
+                  )}
+                  {savingTransaction ? 'Saving...' : 'Save Transaction'}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </main>
   )
 }
@@ -1119,7 +1430,7 @@ function Legend({ color, label }) {
 }
 
 // Empty state
-function EmptyState({ icon: Icon, title, description, link, linkText }) {
+function EmptyState({ icon: Icon, title, description, link, linkText, onAddTransaction }) {
   return (
     <div className="flex min-h-[210px] flex-col items-center justify-center px-5 py-10 text-center">
       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EDF4FB] text-[#3973B9]">
@@ -1134,13 +1445,24 @@ function EmptyState({ icon: Icon, title, description, link, linkText }) {
         {description}
       </p>
 
-      <Link
-        to={link}
-        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#102A43] px-4 py-2.5 text-xs font-bold text-white transition-all duration-200 hover:bg-[#173D60] hover:shadow-md"
-      >
-        {linkText}
-        <ArrowRight size={14} />
-      </Link>
+      {onAddTransaction ? (
+        <button
+          type="button"
+          onClick={onAddTransaction}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#102A43] px-4 py-2.5 text-xs font-bold text-white transition-all duration-200 hover:bg-[#173D60] hover:shadow-md"
+        >
+          {linkText}
+          <Plus size={14} />
+        </button>
+      ) : (
+        <Link
+          to={link}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#102A43] px-4 py-2.5 text-xs font-bold text-white transition-all duration-200 hover:bg-[#173D60] hover:shadow-md"
+        >
+          {linkText}
+          <ArrowRight size={14} />
+        </Link>
+      )}
     </div>
   )
 }
