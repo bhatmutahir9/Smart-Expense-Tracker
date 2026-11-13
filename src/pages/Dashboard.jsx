@@ -517,7 +517,7 @@ export default function Dashboard() {
               <div className="relative grid gap-8 p-5 sm:p-7 lg:grid-cols-[1.3fr_0.7fr] lg:p-9">
                 <div className="flex flex-col justify-between gap-7">
                   <div>
-                    <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
+                    <div className="flex items-center gap-2 text-xs font-medium  text-slate-300">
                       <Wallet size={16} className="text-[#9FC3E8]" />
                       Your total balance
                     </div>
@@ -561,7 +561,7 @@ export default function Dashboard() {
                         <TrendingUp size={17} />
                       </span>
                     </div>
-                    <p className="mt-3 break-all text-xl font-bold sm:text-2xl">
+                    <p className="mt-3 break-all text-xl font-bold text-green-400 sm:text-2xl">
                       {currency(income)}
                     </p>
                     <p className="mt-1 text-[10px] text-slate-400">
@@ -578,7 +578,7 @@ export default function Dashboard() {
                         <TrendingDown size={17} />
                       </span>
                     </div>
-                    <p className="mt-3 break-all text-xl font-bold sm:text-2xl">
+                    <p className="mt-3 break-all text-xl font-bold text-red-500 sm:text-2xl">
                       {currency(expenses)}
                     </p>
                     <p className="mt-1 text-[10px] text-slate-400">
