@@ -95,6 +95,12 @@ export default function RecurringTransactions() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
 
+  // Individual payment amount editor.
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [editingPayment, setEditingPayment] = useState(null)
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [savingPaymentAmount, setSavingPaymentAmount] = useState(false)
+
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [form, setForm] = useState(initialForm)
@@ -104,7 +110,6 @@ export default function RecurringTransactions() {
     [rules]
   )
 
-  // Fetch recurring rules and payment history.
   useEffect(() => {
     let cancelled = false
 
@@ -142,7 +147,6 @@ export default function RecurringTransactions() {
     }
   }, [user?.id])
 
-  // Refresh recurring rules and payments.
   const refreshData = async (showSyncMessage = false) => {
     if (!user?.id) return false
 
@@ -169,8 +173,6 @@ export default function RecurringTransactions() {
     }
   }
 
-  // Update form fields.
-  // Switching to income automatically clears the end date.
   const updateField = (event) => {
     const { name, value } = event.target
 
@@ -183,7 +185,6 @@ export default function RecurringTransactions() {
     }))
   }
 
-  // Open create modal.
   const openCreateModal = () => {
     setEditingId(null)
     setForm({ ...initialForm, start_date: today() })
@@ -192,7 +193,6 @@ export default function RecurringTransactions() {
     setModalOpen(true)
   }
 
-  // Open edit modal.
   const openEditModal = (rule) => {
     setEditingId(rule.id)
 
@@ -242,7 +242,6 @@ export default function RecurringTransactions() {
       return
     }
 
-    // End-date validation applies only to expenses.
     if (
       form.type === 'expense' &&
       form.end_date &&
@@ -256,8 +255,6 @@ export default function RecurringTransactions() {
     setError('')
     setSuccess('')
 
-    // Income always has NULL end_date.
-    // Expenses retain their optional end date.
     const payload = {
       title: form.title.trim(),
       amount: Number(form.amount),
@@ -273,33 +270,28 @@ export default function RecurringTransactions() {
     }
 
     try {
-      
-if (editingId) {
-  // First update the recurring rule.
-  const { error: updateError } = await supabase
-    .from('recurring_transactions')
-    .update(payload)
-    .eq('id', editingId)
-    .eq('user_id', user.id)
+      if (editingId) {
+        const { error: updateError } = await supabase
+          .from('recurring_transactions')
+          .update(payload)
+          .eq('id', editingId)
+          .eq('user_id', user.id)
 
-  if (updateError) throw updateError
+        if (updateError) throw updateError
 
-  // Update all pending payment cycles with the latest amount.
-  // Completed payments remain unchanged to preserve history.
-  const { error: paymentUpdateError } = await supabase
-    .from('recurring_transaction_payments')
-    .update({
-      amount: payload.amount,
-    })
-    .eq('recurring_transaction_id', editingId)
-    .eq('user_id', user.id)
-    .eq('payment_status', 'pending')
+        // Update pending cycles only.
+        // Completed historical payments are preserved.
+        const { error: paymentUpdateError } = await supabase
+          .from('recurring_transaction_payments')
+          .update({ amount: payload.amount })
+          .eq('recurring_transaction_id', editingId)
+          .eq('user_id', user.id)
+          .eq('payment_status', 'pending')
 
-  if (paymentUpdateError) throw paymentUpdateError
+        if (paymentUpdateError) throw paymentUpdateError
 
-  setSuccess('Recurring transaction and pending payments updated.')
-}
- else {
+        setSuccess('Recurring transaction and pending payments updated.')
+      } else {
         const { error: insertError } = await supabase
           .from('recurring_transactions')
           .insert({
@@ -322,6 +314,74 @@ if (editingId) {
       setError(err.message || 'Something went wrong.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Open the amount editor for an individual history entry.
+  const openPaymentEditor = (payment) => {
+    setEditingPayment(payment)
+    setPaymentAmount(String(payment.amount ?? ''))
+    setError('')
+    setSuccess('')
+    setPaymentModalOpen(true)
+  }
+
+  const closePaymentEditor = () => {
+    if (savingPaymentAmount) return
+
+    setPaymentModalOpen(false)
+    setEditingPayment(null)
+    setPaymentAmount('')
+  }
+
+  // Update the selected payment, its linked transaction,
+  // the recurring rule, and all pending cycles through one RPC.
+  const handlePaymentAmountSave = async (event) => {
+    event.preventDefault()
+
+    if (!user?.id || !editingPayment) {
+      setError('Please log in again.')
+      return
+    }
+
+    const amount = Number(paymentAmount)
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setError('Enter a valid amount greater than zero.')
+      return
+    }
+
+    setSavingPaymentAmount(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const { error: rpcError } = await supabase.rpc(
+        'update_recurring_payment_amount',
+        {
+          p_payment_id: editingPayment.id,
+          p_amount: amount,
+        }
+      )
+
+      if (rpcError) throw rpcError
+
+      setPaymentModalOpen(false)
+      setEditingPayment(null)
+      setPaymentAmount('')
+
+      const refreshed = await refreshData()
+
+      if (refreshed) {
+        setSuccess(
+          'Amount updated successfully. The payment history, linked transaction, recurring rule and pending cycles are synchronized.'
+        )
+      }
+    } catch (err) {
+      console.error('Payment amount update failed:', err)
+      setError(err.message || 'Could not update payment amount.')
+    } finally {
+      setSavingPaymentAmount(false)
     }
   }
 
@@ -373,7 +433,6 @@ if (editingId) {
     }
   }
 
-  // Pause or resume a recurring rule.
   const toggleStatus = async (rule) => {
     if (!user?.id) return
 
@@ -400,7 +459,6 @@ if (editingId) {
     )
   }
 
-  // Delete a recurring rule.
   const deleteRule = async (id) => {
     if (!user?.id) return
 
@@ -430,7 +488,6 @@ if (editingId) {
     setSuccess('Recurring transaction deleted.')
   }
 
-  // Find the latest payment for every recurring rule.
   const latestPaymentByRule = useMemo(() => {
     const latest = {}
 
@@ -445,14 +502,8 @@ if (editingId) {
     return latest
   }, [payments])
 
-  // --------------------------------------------------
-  // RECURRING TOTALS
-  // --------------------------------------------------
-
   const currentDate = today()
 
-  // Include active rules that have started and have not expired.
-  // Income has no end date, so it will not expire automatically.
   const activeRules = useMemo(
     () =>
       rules.filter((rule) => {
@@ -473,7 +524,6 @@ if (editingId) {
     [rules, currentDate]
   )
 
-  // Total active recurring income.
   const totalRecurringIncome = useMemo(
     () =>
       activeRules
@@ -485,7 +535,6 @@ if (editingId) {
     [activeRules]
   )
 
-  // Total active recurring expenses.
   const totalRecurringExpenses = useMemo(
     () =>
       activeRules
@@ -497,7 +546,6 @@ if (editingId) {
     [activeRules]
   )
 
-  // Separate monthly expenses total.
   const monthlyExpenses = useMemo(
     () =>
       activeRules
@@ -513,10 +561,6 @@ if (editingId) {
     [activeRules]
   )
 
-  // --------------------------------------------------
-  // PAYMENT SUMMARY
-  // --------------------------------------------------
-
   const pendingPayments = payments.filter(
     (payment) => payment.payment_status === 'pending'
   )
@@ -525,7 +569,6 @@ if (editingId) {
     (payment) => payment.payment_status === 'paid'
   )
 
-  // Search and filter recurring rules.
   const filteredRules = rules.filter((rule) => {
     const matchesSearch =
       (rule.title || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -637,44 +680,35 @@ if (editingId) {
 
         {/* Income and Expense Overview */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-
-          {/* Recurring Income Card */}
           <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
             <div>
               <p className="text-xs font-medium text-slate-500">
                 Active Recurring Income
               </p>
-
               <p className="mt-1 text-xl font-bold tracking-tight text-emerald-600">
                 {currency(totalRecurringIncome)}
               </p>
-
               <p className="mt-1 text-[11px] text-slate-400">
                 Total of all active income rules
               </p>
             </div>
-
             <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600">
               <ArrowUpRight size={21} />
             </div>
           </div>
 
-          {/* Recurring Expense Card */}
           <div className="flex items-center justify-between rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
             <div>
               <p className="text-xs font-medium text-slate-500">
                 Active Recurring Expenses
               </p>
-
               <p className="mt-1 text-xl font-bold tracking-tight text-rose-600">
                 {currency(totalRecurringExpenses)}
               </p>
-
               <p className="mt-1 text-[11px] text-slate-400">
                 Total of all active expense rules
               </p>
             </div>
-
             <div className="rounded-xl bg-rose-50 p-2.5 text-rose-600">
               <ArrowDownRight size={21} />
             </div>
@@ -717,18 +751,13 @@ if (editingId) {
                             : 'bg-rose-50 text-rose-600'
                         }`}
                       >
-                        {isIncome ? (
-                          <TrendingUp size={18} />
-                        ) : (
-                          <TrendingDown size={18} />
-                        )}
+                        {isIncome ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
                       </div>
 
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-800">
                           {rule?.title || 'Recurring transaction'}
                         </p>
-
                         <p className="mt-0.5 text-xs text-slate-500">
                           {rule?.category || 'Transaction'} · Due {dateFormat(payment.due_date)}
                         </p>
@@ -740,7 +769,6 @@ if (editingId) {
                         <p className="text-sm font-bold text-slate-900">
                           {isIncome ? '+' : '-'}{currency(payment.amount)}
                         </p>
-
                         <span className="text-[11px] font-semibold text-amber-600">
                           Pending
                         </span>
@@ -808,11 +836,7 @@ if (editingId) {
                             : 'bg-rose-50 text-rose-600'
                         }`}
                       >
-                        {isIncome ? (
-                          <TrendingUp size={17} />
-                        ) : (
-                          <TrendingDown size={17} />
-                        )}
+                        {isIncome ? <TrendingUp size={17} /> : <TrendingDown size={17} />}
                       </div>
 
                       <div className="min-w-0">
@@ -833,7 +857,7 @@ if (editingId) {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 sm:justify-end">
+                    <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end">
                       <p className={`text-sm font-bold ${isIncome ? 'text-emerald-600' : 'text-slate-900'}`}>
                         {isIncome ? '+' : '-'}{currency(payment.amount)}
                       </p>
@@ -846,15 +870,25 @@ if (editingId) {
                         }`}
                       >
                         {isPaid
-                          ? isIncome
-                            ? 'Received'
-                            : 'Paid'
+                          ? isIncome ? 'Received' : 'Paid'
                           : 'Pending'}
                       </span>
 
+                      {/* NEW: Edit this individual payment amount */}
                       <button
+                        type="button"
+                        onClick={() => openPaymentEditor(payment)}
+                        disabled={savingPaymentAmount || updatingPayment !== null}
+                        title="Edit payment amount"
+                        className="rounded-lg border border-slate-200 p-2 text-slate-500 transition hover:border-[#D8E6F4] hover:bg-[#EDF4FB] hover:text-[#3973B9] disabled:opacity-50"
+                      >
+                        <Pencil size={15} />
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => togglePayment(payment)}
-                        disabled={updatingPayment !== null}
+                        disabled={updatingPayment !== null || savingPaymentAmount}
                         title={
                           isPaid
                             ? isIncome ? 'Undo received' : 'Undo paid'
@@ -886,7 +920,6 @@ if (editingId) {
                 <h2 className="text-base font-bold text-[#102A43]">
                   All Recurring Transactions
                 </h2>
-
                 <p className="mt-1 text-xs text-slate-500">
                   Manage your recurring rules and schedules.
                 </p>
@@ -898,7 +931,6 @@ if (editingId) {
                     size={15}
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   />
-
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
@@ -948,11 +980,7 @@ if (editingId) {
                             : 'bg-rose-50 text-rose-600'
                         }`}
                       >
-                        {isIncome ? (
-                          <TrendingUp size={19} />
-                        ) : (
-                          <TrendingDown size={19} />
-                        )}
+                        {isIncome ? <TrendingUp size={19} /> : <TrendingDown size={19} />}
                       </div>
 
                       <div className="min-w-0">
@@ -1017,11 +1045,7 @@ if (editingId) {
                           title={rule.is_active ? 'Pause' : 'Resume'}
                           onClick={() => toggleStatus(rule)}
                         >
-                          {rule.is_active ? (
-                            <Pause size={15} />
-                          ) : (
-                            <Play size={15} />
-                          )}
+                          {rule.is_active ? <Pause size={15} /> : <Play size={15} />}
                         </ActionButton>
 
                         <ActionButton
@@ -1040,7 +1064,7 @@ if (editingId) {
           )}
         </section>
 
-        {/* Create / Edit Modal */}
+        {/* Create / Edit Recurring Rule Modal */}
         {modalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/40 p-3 backdrop-blur-[3px]">
             <div className="my-auto w-full max-w-lg overflow-hidden rounded-2xl border border-white/60 bg-white shadow-2xl">
@@ -1049,7 +1073,6 @@ if (editingId) {
                   <h2 className="text-lg font-bold text-[#102A43]">
                     {editingId ? 'Edit Recurring Rule' : 'New Recurring Rule'}
                   </h2>
-
                   <p className="mt-0.5 text-xs text-slate-500">
                     Set up your regular income or expense.
                   </p>
@@ -1068,7 +1091,6 @@ if (editingId) {
               <form onSubmit={handleSubmit} className="space-y-3.5 p-5 sm:px-6 sm:py-5">
                 <div>
                   <label className="form-label">Transaction Title</label>
-
                   <input
                     name="title"
                     value={form.title}
@@ -1082,7 +1104,6 @@ if (editingId) {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="form-label">Amount (₹)</label>
-
                     <input
                       name="amount"
                       type="number"
@@ -1098,7 +1119,6 @@ if (editingId) {
 
                   <div>
                     <label className="form-label">Transaction Type</label>
-
                     <select
                       name="type"
                       value={form.type}
@@ -1113,7 +1133,6 @@ if (editingId) {
 
                 <div>
                   <label className="form-label">Category</label>
-
                   <input
                     name="category"
                     value={form.category}
@@ -1126,7 +1145,6 @@ if (editingId) {
 
                 <div>
                   <label className="form-label">Frequency</label>
-
                   <select
                     name="frequency"
                     value={form.frequency}
@@ -1143,7 +1161,6 @@ if (editingId) {
                 <div className={form.type === 'expense' ? 'grid grid-cols-2 gap-3' : ''}>
                   <div>
                     <label className="form-label">Start Date</label>
-
                     <input
                       name="start_date"
                       type="date"
@@ -1154,11 +1171,9 @@ if (editingId) {
                     />
                   </div>
 
-                  {/* End Date is only available for expenses. */}
                   {form.type === 'expense' && (
                     <div>
                       <label className="form-label">End Date (Optional)</label>
-
                       <input
                         name="end_date"
                         type="date"
@@ -1179,7 +1194,6 @@ if (editingId) {
 
                 <div>
                   <label className="form-label">Description (Optional)</label>
-
                   <textarea
                     name="description"
                     value={form.description}
@@ -1216,6 +1230,97 @@ if (editingId) {
                       : editingId
                         ? 'Save Changes'
                         : 'Create Recurring Rule'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* NEW: Edit Payment Amount Modal */}
+        {paymentModalOpen && editingPayment && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-slate-950/50 p-3 backdrop-blur-[3px]">
+            <div className="my-auto w-full max-w-md overflow-hidden rounded-2xl border border-white/60 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                <div>
+                  <h2 className="text-lg font-bold text-[#102A43]">
+                    Edit Payment Amount
+                  </h2>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Update this individual billing cycle.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closePaymentEditor}
+                  disabled={savingPaymentAmount}
+                  className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <X size={19} />
+                </button>
+              </div>
+
+              <form onSubmit={handlePaymentAmountSave} className="space-y-4 p-5">
+                <div className="rounded-xl border border-slate-100 bg-[#F3F7FB] p-3.5">
+                  <p className="text-sm font-semibold text-[#102A43]">
+                    {ruleById[editingPayment.recurring_transaction_id]?.title ||
+                      'Recurring transaction'}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Due date: {dateFormat(editingPayment.due_date)}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Current amount: {currency(editingPayment.amount)}
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-slate-500">
+                    Status: {editingPayment.payment_status === 'paid' ? 'Paid / Received' : 'Pending'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="form-label">New Amount (₹)</label>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={paymentAmount}
+                    onChange={(event) => setPaymentAmount(event.target.value)}
+                    placeholder="Enter new amount"
+                    className="form-input"
+                    autoFocus
+                    required
+                  />
+                </div>
+
+                <p className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs leading-5 text-blue-700">
+                  Saving will also update the recurring rule and its pending
+                  payment cycles. If this payment is already completed, its
+                  linked transaction will be updated too.
+                </p>
+
+                {error && (
+                  <p className="rounded-lg border border-red-100 bg-red-50 p-2.5 text-xs text-red-600">
+                    {error}
+                  </p>
+                )}
+
+                <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={closePaymentEditor}
+                    disabled={savingPaymentAmount}
+                    className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={savingPaymentAmount}
+                    className="flex-1 rounded-xl bg-[#102A43] py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#173D60] disabled:opacity-60"
+                  >
+                    {savingPaymentAmount ? 'Updating...' : 'Save Amount'}
                   </button>
                 </div>
               </form>
@@ -1273,7 +1378,6 @@ function SummaryCard({ title, value, icon, color }) {
     <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-slate-500">{title}</p>
-
         <div className={`rounded-xl p-2 ${colors[color]}`}>
           {icon}
         </div>
@@ -1295,7 +1399,6 @@ function Alert({ type, message, onClose }) {
   return (
     <div className={`flex items-start justify-between gap-3 rounded-xl border px-3.5 py-3 text-xs font-medium ${styles}`}>
       <span className="break-words">{message}</span>
-
       <button
         type="button"
         onClick={onClose}
@@ -1318,7 +1421,6 @@ function SectionHeading({ icon, title, subtitle, color }) {
       <div className={`rounded-xl p-2.5 ${colors[color]}`}>
         {icon}
       </div>
-
       <div>
         <h2 className="text-sm font-bold text-[#102A43]">{title}</h2>
         <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>
@@ -1344,7 +1446,6 @@ function EmptyState({ icon, title, description }) {
       <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#3973B9] shadow-sm">
         {icon}
       </div>
-
       <p className="text-sm font-semibold text-[#102A43]">{title}</p>
       <p className="mt-1 text-xs text-slate-500">{description}</p>
     </div>
