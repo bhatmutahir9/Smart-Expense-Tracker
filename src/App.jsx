@@ -4,6 +4,9 @@ import { useAuth } from './context/useAuth'
 
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
 import Analytics from './pages/Analytics'
@@ -55,12 +58,7 @@ export default function App() {
     <Routes>
       <Route
         path="/"
-        element={
-          <Navigate
-            to={user ? '/dashboard' : '/login'}
-            replace
-          />
-        }
+        element={<Navigate to={user ? '/dashboard' : '/login'} replace />}
       />
 
       <Route
@@ -73,6 +71,10 @@ export default function App() {
         element={user ? <Navigate to="/dashboard" replace /> : <Signup />}
       />
 
+      {/* Password recovery routes */}
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/transactions" element={<Transactions />} />
@@ -80,7 +82,6 @@ export default function App() {
         <Route path="/budgets" element={<Budgets />} />
         <Route path="/savings-goals" element={<SavingsGoals />} />
 
-        {/* Recurring Transactions */}
         <Route
           path="/recurring-transactions"
           element={<RecurringTransactions />}
